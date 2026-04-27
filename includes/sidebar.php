@@ -1,5 +1,5 @@
 <?php
-$base = '/contratos';
+$base = '/fibra';
 $current = $_SERVER['REQUEST_URI'] ?? '';
 
 function isActive($needle, $current)

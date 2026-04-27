@@ -364,10 +364,10 @@ if (!isset($_SESSION['username'])) {
                             <option value="">Selecciona un paquete</option>
                             <!-- Antena -->
                             <option value="1" data-precio="250">Residencial 7 MB/s</option>
-                            <option value="2" data-precio="300">Residencial 10 MB/s</option>
+                            <option value="2" data-precio="300">BBS Air 10</option>
                             <option value="3" data-precio="350">Residencial 15 MB/s</option>
-                            <option value="4" data-precio="400">Residencial 20 MB/s</option>
-                            <option value="7" data-precio="450">Residencial 30 MB/s</option>
+                            <option value="4" data-precio="400">BBS Air 20</option>
+                            <option value="7" data-precio="450">BBS Air 30</option>
                             <option value="5" data-precio="500">Residencial 40 MB/s</option>
                             <option value="6" data-precio="600">Residencial 50 MB/s</option>
                             <!-- Fibra -->
@@ -380,7 +380,7 @@ if (!isset($_SESSION['username'])) {
 
                     <div class="md:col-span-3">
                         <label class="label-main">Total de la mensualidad *</label>
-                        <input type="text" id="mensualidad" class="input-dark requerido" placeholder="$0.00" readonly>
+                        <input type="text" id="mensualidad" class="input-dark requerido" placeholder="$0.00">
                     </div>
 
                     <div class="md:col-span-4">
@@ -622,7 +622,7 @@ if (!isset($_SESSION['username'])) {
                     <div>
                         <label class="label-main">Datos para el método de pago elegido</label>
                         <textarea id="datosMetodoPago" rows="8" class="textarea-dark"
-                            placeholder="Ej. banco, referencia, observaciones, datos de la forma de pago...">DATOS de prueba</textarea>
+                            placeholder="Ej. banco, referencia, observaciones, datos de la forma de pago..."></textarea>
                     </div>
                 </div>
             </section>
@@ -825,20 +825,20 @@ if (!isset($_SESSION['username'])) {
                         <div>
                             <label class="label-main">Correo electrónico</label>
                             <input type="email" id="correoElectronico" class="input-dark"
-                                placeholder="correo@dominio.com" value="pedrodiaz15.15@gmail.com">
+                                placeholder="correo@dominio.com" value="">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="label-main">Otro medio</label>
                                 <input type="text" id="otroMedioElectronico" class="input-dark"
-                                    placeholder="WhatsApp, SMS, etc." value="WhatsApp">
+                                    placeholder="WhatsApp, SMS, etc." value="">
                             </div>
 
                             <div>
                                 <label class="label-main">Número</label>
                                 <input type="text" id="numeroOtroMedio" class="input-dark" placeholder="Número"
-                                    value="555-1234">
+                                    value="">
                             </div>
                         </div>
                     </div>
@@ -890,22 +890,22 @@ if (!isset($_SESSION['username'])) {
                     <div>
                         <label class="label-main">Ciudad donde se firma *</label>
                         <input type="text" id="ciudadFirma" class="input-dark requerido" placeholder="Ciudad"
-                            value="Uriangato">
+                            value="">
                     </div>
 
                     <div>
                         <label class="label-main">Día *</label>
-                        <input type="text" id="diaFirma" class="input-dark requerido" placeholder="Día" value="16">
+                        <input type="text" id="diaFirma" class="input-dark requerido" placeholder="Día" value="">
                     </div>
 
                     <div>
                         <label class="label-main">Mes *</label>
-                        <input type="text" id="mesFirma" class="input-dark requerido" placeholder="Mes" value="abril">
+                        <input type="text" id="mesFirma" class="input-dark requerido" placeholder="Mes" value="">
                     </div>
 
                     <div>
                         <label class="label-main">Año *</label>
-                        <input type="text" id="anioFirma" class="input-dark requerido" placeholder="Año" value="2026">
+                        <input type="text" id="anioFirma" class="input-dark requerido" placeholder="Año" value="">
                     </div>
                 </div>
             </section>

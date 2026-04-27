@@ -167,10 +167,10 @@ if (!is_array($metodosPago)) {
 
           <!-- Antena -->
           <option value="1" data-precio="250" <?= selected($row['tarifa'], '1') ?>>Residencial 7 MB/s</option>
-          <option value="2" data-precio="300" <?= selected($row['tarifa'], '2') ?>>Residencial 10 MB/s</option>
+          <option value="2" data-precio="300" <?= selected($row['tarifa'], '2') ?>>BBS Air 10</option>
           <option value="3" data-precio="350" <?= selected($row['tarifa'], '3') ?>>Residencial 15 MB/s</option>
-          <option value="4" data-precio="400" <?= selected($row['tarifa'], '4') ?>>Residencial 20 MB/s</option>
-          <option value="7" data-precio="450" <?= selected($row['tarifa'], '7') ?>>Residencial 30 MB/s</option>
+          <option value="4" data-precio="400" <?= selected($row['tarifa'], '4') ?>>BBS Air 20</option>
+          <option value="7" data-precio="450" <?= selected($row['tarifa'], '7') ?>>BBS Air 30</option>
           <option value="5" data-precio="500" <?= selected($row['tarifa'], '5') ?>>Residencial 40 MB/s</option>
           <option value="6" data-precio="600" <?= selected($row['tarifa'], '6') ?>>Residencial 50 MB/s</option>
 

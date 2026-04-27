@@ -144,10 +144,10 @@ function markPdf(pdf, active, x, y, r = 3) {
 function textoPaqueteFibra(valor) {
   const map = {
     1: "Residencial 7 MB/s",
-    2: "Residencial 10 MB/s",
+    2: "BBS Air 10",
     3: "Residencial 15 MB/s",
-    4: "Residencial 20 MB/s",
-    7: "Residencial 30 MB/s",
+    4: "BBS Air 20",
+    7: "BBS Air 30",
     5: "Residencial 40 MB/s",
     6: "Residencial 50 MB/s",
     8: "BBS Fiber 30",

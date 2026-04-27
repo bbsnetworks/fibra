@@ -56,12 +56,12 @@ function paqueteTexto($tarifa)
 {
     switch ((string)$tarifa) {
         case "1": return "Residencial 7 MB/s";
-        case "2": return "Residencial 10 MB/s";
+        case "2": return "BBS Air 10";
         case "3": return "Residencial 15 MB/s";
-        case "4": return "Residencial 20 MB/s";
+        case "4": return "BBS Air 20";
         case "5": return "Residencial 40 MB/s";
         case "6": return "Residencial 50 MB/s";
-        case "7": return "Residencial 30 MB/s";
+        case "7": return "BBS Air 30";
         case "8": return "Residencial 80 MB/s";
         default: return (string)$tarifa;
     }

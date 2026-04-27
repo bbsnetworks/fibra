@@ -899,17 +899,17 @@ const signatureImage2 =
   if (parseInt(tarifa) === 1) {
     pdf.text("Residencial 7 MBPS", 230, 240);
   } else if (parseInt(tarifa) === 2) {
-    pdf.text("Residencial 10 MBPS", 230, 240);
+    pdf.text("BBS Air 10", 230, 240);
   } else if (parseInt(tarifa) === 3) {
     pdf.text("Residencial 15 MBPS", 230, 240);
   } else if (parseInt(tarifa) === 4) {
-    pdf.text("Residencial 20 MBPS", 230, 240);
+    pdf.text("BBS Air 20", 230, 240);
   } else if (parseInt(tarifa) === 5) {
     pdf.text("Residencial 40 MBPS", 230, 240);
   } else if (parseInt(tarifa) === 6) {
     pdf.text("Residencial 50 MBPS", 230, 240);
   } else if (parseInt(tarifa) === 7) {
-    pdf.text("Residencial 30 MBPS", 230, 240);
+    pdf.text("BBS Air 30", 230, 240);
   }
   pdf.text(plazo, 425, 272);
   pdf.text("1 al 5", 455, 230);

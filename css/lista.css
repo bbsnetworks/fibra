@@ -1,0 +1,26 @@
+.txt1{
+    height: 100px;
+}
+.txt1>span{
+    font-size: 2rem;
+}
+table{
+    text-align: center;
+    width:100%;
+}
+table.dataTable thead>tr>th.dt-orderable-asc, table.dataTable thead>tr>th.dt-orderable-desc, table.dataTable thead>tr>td.dt-orderable-asc, table.dataTable thead>tr>td.dt-orderable-desc {
+    text-align: center;
+}
+.tabla{
+    background-color: #2C3034;
+    color: white;
+}
+select{
+    margin-top: 5px;
+}
+td>button{
+    width: 50px;
+}
+.modal-content{
+    background-color: #2C3034;
+}

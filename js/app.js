@@ -265,15 +265,26 @@ function validarFormulario() {
   campos.forEach((campo) => {
     if (campo.disabled) return;
 
-    const valor = campo.value.trim();
-    if (!valor) {
-  campo.classList.add("input-error");
-  const label = document.querySelector(`label[for="${campo.id}"]`);
-  errores.push(label ? label.innerText : campo.name || "Campo requerido");
-  esValido = false;
-} else {
-  campo.classList.remove("input-error");
-}
+    let valor = (campo.value || "").trim();
+
+    const esSelectInvalido =
+      campo.tagName === "SELECT" &&
+      (valor === "" || valor === "0" || valor === "null" || valor === "undefined");
+
+    const esInputInvalido =
+      campo.tagName !== "SELECT" &&
+      valor === "";
+
+    if (esSelectInvalido || esInputInvalido) {
+      campo.classList.add("input-error", "ring-2", "ring-red-500");
+
+      const label = document.querySelector(`label[for="${campo.id}"]`);
+      errores.push(label ? label.innerText : campo.name || campo.id || "Campo requerido");
+
+      esValido = false;
+    } else {
+      campo.classList.remove("input-error", "ring-2", "ring-red-500");
+    }
   });
 
   const checkboxesObligatorios = [
@@ -314,7 +325,6 @@ function validarFormulario() {
 
   const modemSelect = document.getElementById("modemt");
 
-  // 1 = Comodato -> requiere segunda firma
   if (modemSelect && modemSelect.value === "1" && !firma2Existe) {
     errores.push("Firma del pagaré");
     firma2Wrapper?.classList.add("ring-2", "ring-red-500");
@@ -325,7 +335,7 @@ function validarFormulario() {
 
   if (!esValido) {
     Swal.fire({
-	  ...swalDark,	
+      ...swalDark,
       icon: "error",
       title: "Campos incompletos",
       html: `<ul class="text-left">${errores.map((e) => `<li>• ${e}</li>`).join("")}</ul>`,
@@ -586,9 +596,14 @@ clearSignaturePreviewBtn2?.addEventListener("click", () => {
   });
   const form = document.querySelector("#form");
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    let idcontrato = document.getElementById("ncontrato").value;
+  form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (!validarFormulario()) {
+    return;
+  }
+
+  let idcontrato = document.getElementById("ncontrato").value;
     let name = document.getElementById("name").value;
     let rlegal = document.getElementById("rlegal").value;
     let street = document.getElementById("street").value;
@@ -688,92 +703,62 @@ clearSignaturePreviewBtn2?.addEventListener("click", () => {
 
     let dayContrato = fechac.value.substring(8, 10);
 
-    const inputs = document.querySelectorAll(".requerido");
-    let j = 0;
-    for (var i = 0; i < inputs.length; i++) {
-      if (
-        inputs[i].value == "" ||
-        inputs[i].value == null ||
-        inputs[i].value == undefined
-      ) {
-        //console.log("falta algun dato de ingresar");
-        //console.log(inputs[i].value);
-      } else {
-        //console.log("lleno");
-        //console.log(inputs[i].value);
-        j++;
-      }
-    }
-
-    if (validarFormulario()) {
-      //document.querySelector("#resultado").innerHTML="Documento creado exitosamente";
-      //document.querySelector("#resultado").style.color='green';
-      generatePDF(
-        idcontrato,
-        name,
-        rlegal,
-        street,
-        number,
-        colonia,
-        municipio,
-        cp,
-        estado,
-        rfc,
-        telefono,
-        ttipo,
-        tarifa,
-        total,
-        reconexion,
-        mdesco,
-        plazo,
-        modemt,
-        marca,
-        modelo,
-        serie,
-        nequipos,
-        tpago,
-        cequipos,
-        domicilioi,
-        fechai,
-        horai,
-        costoi,
-        acargo,
-        mpago,
-        cmes,
-        banco,
-        ntarjeta,
-        sadicional1,
-        sdescripcion1,
-        scosto1,
-        sadicional2,
-        sdescripcion2,
-        scosto2,
-        fadicional1,
-        fdescripcion1,
-        fcosto1,
-        fadicional2,
-        fdescripcion2,
-        fcosto2,
-        ccontrato,
-        cdminimos,
-        yearContrato,
-        mes,
-        dayContrato,
-        monthContrato,
-        scontrato,
-        ciudad,
-        ncontrato,
-      );
-    } else {
-      //document.querySelector("#resultado").style.color='red';
-      if (j < inputs.length && scontrato) {
-        //document.querySelector("#resultado").innerHTML="Faltan Datos por llenar";
-        //document.getElementById("euser").classList.add('d-none');
-      } else {
-        //document.querySelector("#resultado").innerHTML="el usurio ya existe, si deseas continuar marca la casilla de arriba";
-        //document.getElementById("euser").classList.remove('d-none');
-      }
-    }
+    await generatePDF(
+      idcontrato,
+      name,
+      rlegal,
+      street,
+      number,
+      colonia,
+      municipio,
+      cp,
+      estado,
+      rfc,
+      telefono,
+      ttipo,
+      tarifa,
+      total,
+      reconexion,
+      mdesco,
+      plazo,
+      modemt,
+      marca,
+      modelo,
+      serie,
+      nequipos,
+      tpago,
+      cequipos,
+      domicilioi,
+      fechai,
+      horai,
+      costoi,
+      acargo,
+      mpago,
+      cmes,
+      banco,
+      ntarjeta,
+      sadicional1,
+      sdescripcion1,
+      scosto1,
+      sadicional2,
+      sdescripcion2,
+      scosto2,
+      fadicional1,
+      fdescripcion1,
+      fcosto1,
+      fadicional2,
+      fdescripcion2,
+      fcosto2,
+      ccontrato,
+      cdminimos,
+      yearContrato,
+      mes,
+      dayContrato,
+      monthContrato,
+      scontrato,
+      ciudad,
+      ncontrato
+    ); 
   });
   await cargarSiguienteContrato();
   //const image = await loadImage("../img/1.jpg");

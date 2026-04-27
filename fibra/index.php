@@ -208,10 +208,10 @@ if (!isset($_SESSION['username'])) {
                     <button type="button" class="btn-main" id="btnGenerarContrato">
                         Generar contrato
                     </button>
-                    <button type="button" id="btnPreviewFibra"
+                    <!-- <button type="button" id="btnPreviewFibra"
                         class="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-400">
                         Vista previa PDF fibra
-                    </button>
+                    </button> -->
                 </div>
             </div>
         </div>
@@ -520,7 +520,7 @@ if (!isset($_SESSION['username'])) {
 
                             <div>
                                 <label class="label-main">Costo diferido</label>
-                                <input type="text" id="costoDiferido" class="input-dark" placeholder="$0.00" value="">
+                                <input type="text" id="costoDiferido" class="input-dark" placeholder="$0.00" value="0">
                             </div>
 
                             <div>

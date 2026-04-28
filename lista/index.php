@@ -179,7 +179,53 @@ if (!isset($_SESSION['username'])) {
     </div>
   </div>
 </div>
+<!-- Modal Reenviar Contrato -->
+<div class="modal fade" id="modalReenviarCorreo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content border border-white/10 bg-[#0b1a2d] text-white shadow-xl">
+      <div class="modal-header border-bottom border-white/10">
+        <h1 class="modal-title fs-5">Reenviar contrato</h1>
 
+        <button 
+          type="button" 
+          class="btn-close btn-close-white" 
+          data-bs-dismiss="modal" 
+          aria-label="Close">
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="reenviar_idcontrato">
+
+        <label class="mb-2 block text-sm font-medium text-white/70">
+          Correo actual del cliente
+        </label>
+
+        <input
+          type="email"
+          id="reenviar_email"
+          class="w-full rounded-2xl border border-white/10 bg-[#071322] px-4 py-3 text-white outline-none transition focus:border-cyan-400/40 focus:bg-[#0c1d33]">
+
+        <p class="mt-3 text-sm text-white/55">
+          Se enviará nuevamente el contrato a este correo y al correo de respaldo.
+        </p>
+      </div>
+
+      <div class="modal-footer border-top border-white/10">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          id="btnConfirmarReenvio"
+          class="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400">
+          Reenviar contrato
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
   <script src="../js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
   <script src="https://momentjs.com/downloads/moment.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

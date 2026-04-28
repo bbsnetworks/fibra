@@ -10,6 +10,10 @@ const modalAgregarEl = document.getElementById("modalAgregar");
 const modalEditarEl = document.getElementById("modalEditar");
 const modalBodyAgregarEl = document.getElementById("modal");
 const modalBodyEditarEl = document.getElementById("modal2");
+const modalReenviarCorreoEl = document.getElementById("modalReenviarCorreo");
+const modalReenviarCorreo = modalReenviarCorreoEl
+  ? new bootstrap.Modal(modalReenviarCorreoEl)
+  : null;
 
 const modalAgregar = modalAgregarEl
   ? new bootstrap.Modal(modalAgregarEl)
@@ -831,6 +835,94 @@ async function enviarContratoPorCorreo(id, emailCliente) {
 
   return result;
 }
+async function abrirModalReenviarContrato(id) {
+  try {
+    const body = new URLSearchParams({ id });
+
+    const response = await fetch("../php/imprimirPDF.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      body,
+    });
+
+    const raw = await response.json();
+
+    if (!response.ok || raw.error || raw.status === "error") {
+      throw new Error(raw.message || "No se pudo obtener el contrato.");
+    }
+
+    document.getElementById("reenviar_idcontrato").value = id;
+    document.getElementById("reenviar_email").value =
+      raw.correo_electronico || raw.email || "";
+
+    modalReenviarCorreo?.show();
+  } catch (error) {
+    Swal.fire({
+      ...swalDark,
+      title: "No se pudo cargar el correo",
+      text: error.message || "Ocurrió un error.",
+      icon: "error",
+    });
+  }
+}
+
+async function confirmarReenvioContrato() {
+  const id = document.getElementById("reenviar_idcontrato")?.value || "";
+  const email = document.getElementById("reenviar_email")?.value.trim() || "";
+
+  if (!id || !email) {
+    Swal.fire({
+      ...swalDark,
+      title: "Correo requerido",
+      text: "Ingresa un correo válido para reenviar el contrato.",
+      icon: "warning",
+    });
+    return;
+  }
+
+  const confirmar = await Swal.fire({
+    ...swalDark,
+    title: "¿Reenviar contrato?",
+    text: `Se enviará el contrato al correo: ${email}`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Sí, reenviar",
+    cancelButtonText: "Cancelar",
+  });
+
+  if (!confirmar.isConfirmed) return;
+
+  try {
+    Swal.fire({
+      ...swalDark,
+      title: "Enviando contrato...",
+      text: "Por favor espera.",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    await enviarContratoPorCorreo(id, email);
+
+    Swal.fire({
+      ...swalDark,
+      title: "Contrato reenviado",
+      text: "El contrato se envió correctamente.",
+      icon: "success",
+    });
+
+    modalReenviarCorreo?.hide();
+  } catch (error) {
+    Swal.fire({
+      ...swalDark,
+      title: "No se pudo reenviar",
+      text: error.message || "Ocurrió un error al enviar el correo.",
+      icon: "error",
+    });
+  }
+}
+
 async function addUsuario(id) {
   const localidadSelect = document.getElementById("localidad");
   const nodoSelect = document.getElementById("nodo");
@@ -1198,4 +1290,8 @@ filtroEstadoEl?.addEventListener("change", cargarTabla);
 document.addEventListener("DOMContentLoaded", () => {
   cargarTabla();
 });
+
+document
+  .getElementById("btnConfirmarReenvio")
+  ?.addEventListener("click", confirmarReenvioContrato);
 /* =================== fin lista.js =================== */

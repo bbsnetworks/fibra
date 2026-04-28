@@ -54,23 +54,32 @@ $result = $conexion->query($sql);
 
 function paqueteTexto($tarifa)
 {
-    switch ((string)$tarifa) {
-        case "1": return "Residencial 7 MB/s";
-        case "2": return "BBS Air 10";
-        case "3": return "Residencial 15 MB/s";
-        case "4": return "BBS Air 20";
-        case "5": return "Residencial 40 MB/s";
-        case "6": return "Residencial 50 MB/s";
-        case "7": return "BBS Air 30";
-        case "8": return "Residencial 80 MB/s";
-        default: return (string)$tarifa;
+    switch ((string) $tarifa) {
+        case "1":
+            return "Residencial 7 MB/s";
+        case "2":
+            return "BBS Air 10";
+        case "3":
+            return "Residencial 15 MB/s";
+        case "4":
+            return "BBS Air 20";
+        case "5":
+            return "Residencial 40 MB/s";
+        case "6":
+            return "Residencial 50 MB/s";
+        case "7":
+            return "BBS Air 30";
+        case "8":
+            return "Residencial 80 MB/s";
+        default:
+            return (string) $tarifa;
     }
 }
 
 if ($result && $result->num_rows > 0) {
     echo '<div class="w-full overflow-x-auto">';
     echo '<table class="min-w-full overflow-hidden rounded-2xl text-sm text-white">';
-    
+
     echo '<thead>';
     echo '<tr class="border-b border-white/10 bg-[#0f172a] text-xs uppercase tracking-wide text-slate-300">';
     echo '<th class="px-4 py-4 text-center font-semibold">Creado</th>';
@@ -90,6 +99,7 @@ if ($result && $result->num_rows > 0) {
     echo '<th class="px-4 py-4 text-center font-semibold">Editar</th>';
     echo '<th class="px-4 py-4 text-center font-semibold">Descargar</th>';
     echo '<th class="px-4 py-4 text-center font-semibold">Crear</th>';
+    echo '<th class="px-4 py-4 text-center font-semibold">Reenviar</th>';
 
     if ($estado === 'activo') {
         echo '<th class="px-4 py-4 text-center font-semibold">Cancelar</th>';
@@ -103,7 +113,7 @@ if ($result && $result->num_rows > 0) {
     echo '<tbody>';
 
     while ($row = $result->fetch_assoc()) {
-        $idc = (int)$row['idcontrato'];
+        $idc = (int) $row['idcontrato'];
         $nombre = htmlspecialchars($row['nombre'] ?? '', ENT_QUOTES, 'UTF-8');
         $dir = htmlspecialchars($row['direccion'] ?? '', ENT_QUOTES, 'UTF-8');
         $fecha = htmlspecialchars($row['fecha'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -125,7 +135,7 @@ if ($result && $result->num_rows > 0) {
 
         $usuario_creado = 0;
         if ($result2 && $row2 = $result2->fetch_assoc()) {
-            $usuario_creado = (int)$row2['usuario_creado'];
+            $usuario_creado = (int) $row2['usuario_creado'];
         }
 
         echo '<tr class="border-b border-white/5 bg-white/[0.02] transition hover:bg-cyan-400/5">';
@@ -149,8 +159,8 @@ if ($result && $result->num_rows > 0) {
 
         echo '<td class="px-4 py-4 text-center">
                 <span class="inline-flex rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-300">'
-                . $idc .
-             '</span>
+            . $idc .
+            '</span>
               </td>';
 
         echo '<td class="px-4 py-4 text-left font-medium text-white">' . $nombre . '</td>';
@@ -227,7 +237,15 @@ if ($result && $result->num_rows > 0) {
                   <i class="bi bi-person-plus text-lg"></i>
                 </button>
               </td>';
-
+        // Reenviar correo
+        echo '<td class="px-4 py-4 text-center">
+        <button
+          class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/90 text-white shadow-lg shadow-indigo-500/20 transition hover:scale-[1.03] hover:bg-indigo-400"
+          onclick="abrirModalReenviarContrato(' . $idc . ')"
+          title="Reenviar contrato por correo">
+          <i class="bi bi-envelope-arrow-up text-lg"></i>
+        </button>
+      </td>';
         // Acción dinámica
         if ($estado === 'activo') {
             echo '<td class="px-4 py-4 text-center">

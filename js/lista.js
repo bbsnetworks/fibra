@@ -401,7 +401,7 @@ function convertirContratoDBaFibra(raw) {
   };
 }
 
-async function imprimirContratoFibra(datosFormulario) {
+async function imprimirContratoFibra(datosFormulario, opciones = {}) {
   const m = mapaFibraReimpresion;
 
   try {
@@ -684,6 +684,10 @@ if (d.firmaCliente) {
     pdf.addPage();
     addPageImage(image9);
 
+    if (opciones.returnBlob) {
+      return pdf.output("blob");
+    }
+
     window.open(pdf.output("bloburl"), "_blank");
   } catch (error) {
     console.error(error);
@@ -788,7 +792,45 @@ function validateAndAddUsuario(id) {
 
   addUsuario(id, splitter);
 }
+async function enviarContratoPorCorreo(id, emailCliente) {
+  const body = new URLSearchParams({ id });
 
+  const response = await fetch("../php/imprimirPDF.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+    },
+    body,
+  });
+
+  const raw = await response.json();
+
+  if (!response.ok || raw.error || raw.status === "error") {
+    throw new Error(raw.message || "No se pudo obtener el contrato para enviar.");
+  }
+
+  const datosFibra = convertirContratoDBaFibra(raw);
+  const contratoBlob = await imprimirContratoFibra(datosFibra, { returnBlob: true });
+
+  const formData = new FormData();
+  formData.append("idcontrato", id);
+  formData.append("email_cliente", emailCliente);
+  formData.append("nombre", raw.nombre || "");
+  formData.append("contrato_pdf", contratoBlob, `contrato_${id}.pdf`);
+
+  const envio = await fetch("../php/enviarContratoCorreo.php", {
+    method: "POST",
+    body: formData,
+  });
+
+  const result = await envio.json();
+
+  if (!envio.ok || result.status !== "success") {
+    throw new Error(result.message || "No se pudo enviar el correo.");
+  }
+
+  return result;
+}
 async function addUsuario(id) {
   const localidadSelect = document.getElementById("localidad");
   const nodoSelect = document.getElementById("nodo");
@@ -817,16 +859,32 @@ async function addUsuario(id) {
     const text = (await response.text()).trim();
 
     if (text === "insercion exitosa") {
-      modalAgregar?.hide();
-      await cargarTabla();
+  const emailCliente = document.getElementById("email")?.value || "";
 
-      Swal.fire({
-        ...swalDark,
-        title: "¡Creado!",
-        text: "El usuario se ha creado correctamente.",
-        icon: "success",
-      });
-    } else {
+  modalAgregar?.hide();
+  await cargarTabla();
+
+  try {
+    await enviarContratoPorCorreo(id, emailCliente);
+
+    Swal.fire({
+      ...swalDark,
+      title: "¡Cliente creado!",
+      text: "El cliente se creó correctamente y el contrato fue enviado por correo.",
+      icon: "success",
+    });
+  } catch (correoError) {
+    console.error(correoError);
+
+    Swal.fire({
+      ...swalDark,
+      title: "Cliente creado, pero no se envió el correo",
+      text: correoError.message || "Revisa la configuración del correo.",
+      icon: "warning",
+      width: "38rem",
+    });
+  }
+} else {
       Swal.fire({
         ...swalDark,
         title: "No se pudo generar el usuario",

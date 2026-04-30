@@ -931,52 +931,40 @@ async function addUsuario(id) {
     localidadSelect?.selectedOptions?.[0]?.textContent || "";
   const nodoTexto = nodoSelect?.selectedOptions?.[0]?.textContent || "";
 
+  const emailCliente = document.getElementById("email")?.value || "";
+
   const params = new URLSearchParams({
     id,
     localidad: localidadTexto,
     nodo: nodoTexto,
     ip: document.getElementById("ip")?.value || "",
-    email: document.getElementById("email")?.value || "",
+    email: emailCliente,
     splitter: document.getElementById("splitter")?.value || "",
   });
 
   try {
+    Swal.fire({
+      ...swalDark,
+      title: "Creando cliente...",
+      html: "Estamos guardando el cliente y preparando el envío del contrato.",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
     const response = await fetch(
       `../php/insertCliete.php?${params.toString()}`,
       {
         method: "GET",
-      },
+      }
     );
 
     const text = (await response.text()).trim();
 
-    if (text === "insercion exitosa") {
-  const emailCliente = document.getElementById("email")?.value || "";
-
-  modalAgregar?.hide();
-  await cargarTabla();
-
-  try {
-    await enviarContratoPorCorreo(id, emailCliente);
-
-    Swal.fire({
-      ...swalDark,
-      title: "¡Cliente creado!",
-      text: "El cliente se creó correctamente y el contrato fue enviado por correo.",
-      icon: "success",
-    });
-  } catch (correoError) {
-    console.error(correoError);
-
-    Swal.fire({
-      ...swalDark,
-      title: "Cliente creado, pero no se envió el correo",
-      text: correoError.message || "Revisa la configuración del correo.",
-      icon: "warning",
-      width: "38rem",
-    });
-  }
-} else {
+    if (text !== "insercion exitosa") {
       Swal.fire({
         ...swalDark,
         title: "No se pudo generar el usuario",
@@ -984,12 +972,38 @@ async function addUsuario(id) {
         icon: "error",
         width: "35rem",
       });
+      return;
     }
+
+    Swal.update({
+      title: "Cliente creado",
+      html: "Ahora estamos enviando el contrato por correo electrónico.",
+    });
+    Swal.showLoading();
+
+    await enviarContratoPorCorreo(id, emailCliente);
+
+    modalAgregar?.hide();
+    await cargarTabla();
+
+    Swal.fire({
+      ...swalDark,
+      title: "¡Cliente creado!",
+      text: "El cliente se creó correctamente y el contrato fue enviado por correo.",
+      icon: "success",
+    });
   } catch (error) {
     console.error(error);
-    if (respuestaEl) {
-      respuestaEl.innerHTML = `<div class="text-red-400 text-sm">Error al crear el usuario.</div>`;
-    }
+
+    Swal.fire({
+      ...swalDark,
+      title: "Cliente creado, pero no se envió el correo",
+      text:
+        error.message ||
+        "El cliente pudo haberse guardado, pero ocurrió un error al enviar el contrato.",
+      icon: "warning",
+      width: "38rem",
+    });
   }
 }
 

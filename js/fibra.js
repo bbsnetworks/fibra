@@ -6,10 +6,50 @@ const btnGenerarContratoBottom = document.getElementById(
 const btnVistaDatos = document.getElementById("btnVistaDatos");
 const btnLimpiar = document.getElementById("btnLimpiar");
 
+const documentosContratoInput = document.getElementById("documentosContrato");
+const listaDocumentosContrato = document.getElementById("listaDocumentosContrato");
+const documentosContratoPreview = document.getElementById("documentosContratoPreview");
+
 let signatureImageSaved1 = null;
 let signaturePadPreview = null;
 let signaturePadModal = null;
 
+function inicializarDocumentosContrato() {
+  if (!documentosContratoInput || !documentosContratoPreview) return;
+
+  documentosContratoInput.addEventListener("change", () => {
+    const archivos = Array.from(documentosContratoInput.files || []);
+
+    documentosContratoPreview.innerHTML = "";
+
+    if (archivos.length === 0) {
+      if (listaDocumentosContrato) {
+        listaDocumentosContrato.classList.add("hidden");
+      }
+      return;
+    }
+
+    if (listaDocumentosContrato) {
+      listaDocumentosContrato.classList.remove("hidden");
+    }
+
+    archivos.forEach((archivo, index) => {
+      const li = document.createElement("li");
+      li.className = "flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-2";
+
+      li.innerHTML = `
+        <span class="truncate">
+          ${index + 1}. ${archivo.name}
+        </span>
+        <span class="text-xs text-slate-400">
+          ${(archivo.size / 1024 / 1024).toFixed(2)} MB
+        </span>
+      `;
+
+      documentosContratoPreview.appendChild(li);
+    });
+  });
+}
 function loadImage(url) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -1477,7 +1517,14 @@ async function guardarContratoFibra(datosFibra) {
   );
 
   // Evidencia: de momento vacía o luego la llenas con la ruta que te devuelva tu upload aparte
-  formData.append("evidencia", "");
+  // Evidencia / documentos adjuntos
+const inputDocumentos = document.getElementById("documentosContrato");
+
+if (inputDocumentos && inputDocumentos.files.length > 0) {
+  Array.from(inputDocumentos.files).forEach((archivo) => {
+    formData.append("documentosContrato[]", archivo);
+  });
+}
 
   const resp = await fetch("../php/guardar_contrato.php", {
     method: "POST",
@@ -1697,4 +1744,5 @@ document.addEventListener("DOMContentLoaded", () => {
   bindSignatureEvents();
   cargarNumeroContrato();
   bindServicioInternetEvents();
+  inicializarDocumentosContrato();
 });

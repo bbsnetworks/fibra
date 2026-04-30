@@ -95,7 +95,45 @@ function bind_dynamic_params(mysqli_stmt $stmt, array &$params): void {
 
     call_user_func_array([$stmt, 'bind_param'], $bind);
 }
+function guardar_evidencias_contrato(int $idcontrato): ?string {
+    if (
+        !isset($_FILES['documentosContrato']) ||
+        empty($_FILES['documentosContrato']['name'][0])
+    ) {
+        return null;
+    }
 
+    $carpeta = __DIR__ . '/../evidencia/';
+
+    if (!is_dir($carpeta)) {
+        mkdir($carpeta, 0775, true);
+    }
+
+    $permitidos = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx'];
+    $rutas = [];
+
+    foreach ($_FILES['documentosContrato']['name'] as $i => $nombreOriginal) {
+        if ($_FILES['documentosContrato']['error'][$i] !== UPLOAD_ERR_OK) {
+            continue;
+        }
+
+        $extension = strtolower(pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+
+        if (!in_array($extension, $permitidos, true)) {
+            continue;
+        }
+
+        $numero = $i + 1;
+        $nombreArchivo = "evidencia{$idcontrato}-{$numero}.{$extension}";
+        $rutaDestino = $carpeta . $nombreArchivo;
+
+        if (move_uploaded_file($_FILES['documentosContrato']['tmp_name'][$i], $rutaDestino)) {
+            $rutas[] = "evidencia/" . $nombreArchivo;
+        }
+    }
+
+    return count($rutas) > 0 ? implode(',', $rutas) : null;
+}
 try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new Exception('Método no permitido.');
@@ -128,8 +166,8 @@ try {
     $firma1 = decode_data_url(post_optional_null('firma'));
     $firma2 = decode_data_url(post_optional_null('firma2')); // si más adelante agregas segunda firma
 
-    // Evidencia: aquí se guarda la ruta/nombre si ya la subiste aparte.
-    $evidencia = post_optional_null('evidencia');
+    // Evidencia / documentos adjuntos
+    $evidencia = guardar_evidencias_contrato($idcontrato);
 
     // Campos derivados / compatibilidad
     $tipoEntregaEquipo = post_str('tipoEntregaEquipo');

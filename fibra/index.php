@@ -216,7 +216,7 @@ if (!isset($_SESSION['username'])) {
             </div>
         </div>
 
-        <form id="formContratoFibra" class="space-y-6" autocomplete="on">
+        <form id="formContratoFibra" class="space-y-6" autocomplete="on" enctype="multipart/form-data">
             <div class="grid grid-cols-1 md:grid-cols-[453px_265px] gap-4 items-start">
                 <div class="space-y-2">
                     <label for="idcontrato" class="text-sm font-semibold text-slate-200">
@@ -965,7 +965,40 @@ if (!isset($_SESSION['username'])) {
                     </div>
                 </div>
             </section>
+            <!-- DOCUMENTOS / EVIDENCIA -->
+<section class="glass-card rounded-3xl p-5 md:p-6">
+    <div class="section-title rounded-2xl px-4 py-3 mb-5">
+        <h2 class="text-lg font-bold text-white">16. Documentos y evidencia</h2>
+        <p class="text-sm text-slate-300">
+            Puedes adjuntar uno o varios archivos relacionados con el contrato. Este campo no es obligatorio.
+        </p>
+    </div>
 
+    <div class="rounded-2xl border border-dashed border-sky-300/20 bg-white/5 p-5">
+        <label for="documentosContrato" class="label-main">
+            Adjuntar documentos
+        </label>
+
+        <input 
+            type="file"
+            id="documentosContrato"
+            name="documentosContrato[]"
+            class="input-dark"
+            multiple
+            accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+        >
+
+        <p class="hint mt-2">
+            Puedes subir PDF, imágenes o documentos. Se guardarán en la carpeta 
+            <strong>evidencia</strong> con el número de contrato.
+        </p>
+
+        <div id="listaDocumentosContrato" class="mt-4 hidden rounded-2xl bg-slate-950/40 border border-white/10 p-4">
+            <h3 class="text-sm font-bold text-white mb-2">Archivos seleccionados:</h3>
+            <ul id="documentosContratoPreview" class="space-y-1 text-sm text-slate-300"></ul>
+        </div>
+    </div>
+</section>
             <!-- PIE -->
             <section class="glass-card rounded-3xl p-5 md:p-6 mb-8">
                 <div class="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">

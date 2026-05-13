@@ -69,8 +69,8 @@ if ($conexion->connect_error) {
         }           
     }
 }
-    $query = "insert into clientes (idcliente,nombre, direccion, localidad, nodo, ip, mensualidad, equipo, telefono, email, paquete, instalacion,splitter) values 
-    ('$idcontrato','$nombre','$completa','$localidad','$nodo','$ip','$mensualidad','$modeme','$telefono','$email','$tarifa','$instalacion','$splitter')";
+    $query = "insert into clientes (idcliente,nombre, direccion, localidad, nodo, ip, mensualidad, equipo, telefono, email, paquete, instalacion,splitter,estado) values 
+    ('$idcontrato','$nombre','$completa','$localidad','$nodo','$ip','$mensualidad','$modeme','$telefono','$email','$tarifa','$instalacion','$splitter','activo')";
     
 
     //  echo $query;

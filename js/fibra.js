@@ -429,7 +429,7 @@ if (correoElectronico) {
     marcarError(correoElectronico);
     valido = false;
 
-    Swal.fire({
+  Swal.fire({
   icon: "warning",
   title: "Correo inválido",
   text: "Ingresa un correo válido, sin acentos ni caracteres especiales. Ejemplo: cliente@dominio.com",

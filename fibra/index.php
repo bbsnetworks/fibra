@@ -231,7 +231,7 @@ if (!isset($_SESSION['username'])) {
                     </p>
                 </div>
 
-                <div class="flex items-start pt-[30px]"> 
+                <div class="flex items-start pt-[30px]">
                     <button type="button" id="btnRecargarContrato"
                         class="w-full md:w-auto rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-4 py-3 transition">
                         Obtener siguiente número
@@ -823,9 +823,10 @@ if (!isset($_SESSION['username'])) {
                         </div>
 
                         <div>
-                            <label class="label-main">Correo electrónico</label>
-                            <input type="email" id="correoElectronico" class="input-dark"
-                                placeholder="correo@dominio.com" value="">
+                            <label class="label-main">Correo electrónico *</label>
+                            <input type="email" id="correoElectronico" name="correoElectronico"
+                                class="input-dark requerido" placeholder="correo@dominio.com" autocomplete="email"
+                                required value="">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -889,8 +890,7 @@ if (!isset($_SESSION['username'])) {
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="label-main">Ciudad donde se firma *</label>
-                        <input type="text" id="ciudadFirma" class="input-dark requerido" placeholder="Ciudad"
-                            value="">
+                        <input type="text" id="ciudadFirma" class="input-dark requerido" placeholder="Ciudad" value="">
                     </div>
 
                     <div>
@@ -966,39 +966,35 @@ if (!isset($_SESSION['username'])) {
                 </div>
             </section>
             <!-- DOCUMENTOS / EVIDENCIA -->
-<section class="glass-card rounded-3xl p-5 md:p-6">
-    <div class="section-title rounded-2xl px-4 py-3 mb-5">
-        <h2 class="text-lg font-bold text-white">16. Documentos y evidencia</h2>
-        <p class="text-sm text-slate-300">
-            Puedes adjuntar uno o varios archivos relacionados con el contrato. Este campo no es obligatorio.
-        </p>
-    </div>
+            <section class="glass-card rounded-3xl p-5 md:p-6">
+                <div class="section-title rounded-2xl px-4 py-3 mb-5">
+                    <h2 class="text-lg font-bold text-white">16. Documentos y evidencia</h2>
+                    <p class="text-sm text-slate-300">
+                        Puedes adjuntar uno o varios archivos relacionados con el contrato. Este campo no es
+                        obligatorio.
+                    </p>
+                </div>
 
-    <div class="rounded-2xl border border-dashed border-sky-300/20 bg-white/5 p-5">
-        <label for="documentosContrato" class="label-main">
-            Adjuntar documentos
-        </label>
+                <div class="rounded-2xl border border-dashed border-sky-300/20 bg-white/5 p-5">
+                    <label for="documentosContrato" class="label-main">
+                        Adjuntar documentos
+                    </label>
 
-        <input 
-            type="file"
-            id="documentosContrato"
-            name="documentosContrato[]"
-            class="input-dark"
-            multiple
-            accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
-        >
+                    <input type="file" id="documentosContrato" name="documentosContrato[]" class="input-dark" multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
 
-        <p class="hint mt-2">
-            Puedes subir PDF, imágenes o documentos. Se guardarán en la carpeta 
-            <strong>evidencia</strong> con el número de contrato.
-        </p>
+                    <p class="hint mt-2">
+                        Puedes subir PDF, imágenes o documentos. Se guardarán en la carpeta
+                        <strong>evidencia</strong> con el número de contrato.
+                    </p>
 
-        <div id="listaDocumentosContrato" class="mt-4 hidden rounded-2xl bg-slate-950/40 border border-white/10 p-4">
-            <h3 class="text-sm font-bold text-white mb-2">Archivos seleccionados:</h3>
-            <ul id="documentosContratoPreview" class="space-y-1 text-sm text-slate-300"></ul>
-        </div>
-    </div>
-</section>
+                    <div id="listaDocumentosContrato"
+                        class="mt-4 hidden rounded-2xl bg-slate-950/40 border border-white/10 p-4">
+                        <h3 class="text-sm font-bold text-white mb-2">Archivos seleccionados:</h3>
+                        <ul id="documentosContratoPreview" class="space-y-1 text-sm text-slate-300"></ul>
+                    </div>
+                </div>
+            </section>
             <!-- PIE -->
             <section class="glass-card rounded-3xl p-5 md:p-6 mb-8">
                 <div class="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">

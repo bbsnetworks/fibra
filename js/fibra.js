@@ -94,7 +94,10 @@ function valor(id) {
   const el = document.getElementById(id);
   return el ? el.value.trim() : "";
 }
-
+function esCorreoValido(correo) {
+  const regex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  return regex.test(correo);
+}
 function checked(id) {
   const el = document.getElementById(id);
   return !!(el && el.checked);
@@ -414,7 +417,30 @@ function validarFormulario() {
       valido = false;
     }
   });
+  const correoElectronico = document.getElementById("correoElectronico");
 
+if (correoElectronico) {
+  const correo = correoElectronico.value.trim();
+
+  if (!correo) {
+    marcarError(correoElectronico);
+    valido = false;
+  } else if (!esCorreoValido(correo)) {
+    marcarError(correoElectronico);
+    valido = false;
+
+    Swal.fire({
+  icon: "warning",
+  title: "Correo inválido",
+  text: "Ingresa un correo válido, sin acentos ni caracteres especiales. Ejemplo: cliente@dominio.com",
+  background: "#0b1120",
+  color: "#e2e8f0",
+  confirmButtonColor: "#0284c7",
+});
+
+    return false;
+  }
+}
   const radiosRequeridos = [
     "tipoTelefono",
     "aplicaReconexcion",
@@ -1745,4 +1771,12 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarNumeroContrato();
   bindServicioInternetEvents();
   inicializarDocumentosContrato();
+
+  const correoElectronico = document.getElementById("correoElectronico");
+
+if (correoElectronico) {
+  correoElectronico.addEventListener("input", () => {
+    correoElectronico.classList.remove("field-error");
+  });
+}
 });

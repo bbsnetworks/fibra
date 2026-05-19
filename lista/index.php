@@ -25,7 +25,8 @@ if (!isset($_SESSION['username'])) {
   <link rel="stylesheet" href="../css/lista.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 </head>
 
 <body class="min-h-screen bg-[#071322] text-white">
@@ -120,7 +121,7 @@ if (!isset($_SESSION['username'])) {
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-white/10 bg-[#071322]">
-          <div id="tabla" class="min-h-[320px] overflow-x-auto p-4 md:p-5">
+          <div id="tabla" class="min-h-[320px] p-4 md:p-5">
             <div class="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
               <div>
                 <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
@@ -226,9 +227,74 @@ if (!isset($_SESSION['username'])) {
     </div>
   </div>
 </div>
+<!-- Modal Ubicación Contrato -->
+<div class="modal fade" id="modalUbicacionContrato" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content border border-white/10 bg-[#0b1a2d] text-white shadow-xl">
+      <div class="modal-header border-bottom border-white/10">
+        <div>
+          <h1 class="modal-title fs-5 flex items-center gap-2">
+            <i class="bi bi-geo-alt-fill text-cyan-400"></i>
+            Ubicación del contrato
+          </h1>
+          <p id="modalUbicacionSubtitulo" class="mb-0 mt-1 text-sm text-white/55">
+            Vista de ubicación guardada.
+          </p>
+        </div>
+
+        <button 
+          type="button" 
+          class="btn-close btn-close-white" 
+          data-bs-dismiss="modal" 
+          aria-label="Close">
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div 
+          id="mapaUbicacionContrato"
+          class="h-[420px] w-full rounded-2xl border border-white/10 bg-[#071322]">
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
+            <p class="mb-1 text-xs uppercase tracking-wide text-white/40">Latitud</p>
+            <p id="modalUbicacionLat" class="mb-0 font-semibold text-white">—</p>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
+            <p class="mb-1 text-xs uppercase tracking-wide text-white/40">Longitud</p>
+            <p id="modalUbicacionLng" class="mb-0 font-semibold text-white">—</p>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
+            <p class="mb-1 text-xs uppercase tracking-wide text-white/40">Precisión</p>
+            <p id="modalUbicacionPrecision" class="mb-0 font-semibold text-white">—</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-top border-white/10">
+        <a
+          id="btnAbrirGoogleMaps"
+          href="#"
+          target="_blank"
+          class="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:bg-cyan-400">
+          <i class="bi bi-map"></i>
+          Abrir en Google Maps
+        </a>
+
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
   <script src="../js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
   <script src="https://momentjs.com/downloads/moment.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../js/bootstrapval.js"></script>
   <script src="../js/booststraptoogletips.js"></script>
   <script src="../js/lista.js"></script>

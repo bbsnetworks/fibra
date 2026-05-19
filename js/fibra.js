@@ -6,6 +6,27 @@ const btnGenerarContratoBottom = document.getElementById(
 const btnVistaDatos = document.getElementById("btnVistaDatos");
 const btnLimpiar = document.getElementById("btnLimpiar");
 
+// =========================
+// UBICACIÓN / MAPA CONTRATO
+// =========================
+const btnObtenerUbicacionContrato = document.getElementById("btnObtenerUbicacionContrato");
+const estadoUbicacionContrato = document.getElementById("estadoUbicacionContrato");
+const contenedorMapaContrato = document.getElementById("mapaContrato");
+
+const inputUbicacionLat = document.getElementById("ubicacion_lat");
+const inputUbicacionLng = document.getElementById("ubicacion_lng");
+const inputUbicacionPrecision = document.getElementById("ubicacion_precision");
+const inputUbicacionFuente = document.getElementById("ubicacion_fuente");
+
+const inputUbicacionLatVisible = document.getElementById("ubicacion_lat_visible");
+const inputUbicacionLngVisible = document.getElementById("ubicacion_lng_visible");
+const inputUbicacionPrecisionVisible = document.getElementById("ubicacion_precision_visible");
+
+let mapaContrato = null;
+let marcadorContrato = null;
+let circuloPrecisionContrato = null;
+let ubicacionFueAjustadaManual = false;
+
 const documentosContratoInput = document.getElementById("documentosContrato");
 const listaDocumentosContrato = document.getElementById("listaDocumentosContrato");
 const documentosContratoPreview = document.getElementById("documentosContratoPreview");
@@ -102,7 +123,250 @@ function checked(id) {
   const el = document.getElementById(id);
   return !!(el && el.checked);
 }
+function inicializarUbicacionContrato() {
+  if (!btnObtenerUbicacionContrato) return;
 
+  btnObtenerUbicacionContrato.addEventListener("click", obtenerUbicacionContrato);
+}
+
+function obtenerUbicacionContrato() {
+  if (!navigator.geolocation) {
+    Swal.fire({
+      icon: "error",
+      title: "Ubicación no disponible",
+      text: "Este navegador no permite obtener ubicación.",
+      background: "#0b1120",
+      color: "#e2e8f0",
+      confirmButtonColor: "#0284c7",
+    });
+    return;
+  }
+
+  if (typeof L === "undefined") {
+    Swal.fire({
+      icon: "error",
+      title: "Mapa no disponible",
+      text: "No se pudo cargar Leaflet. Verifica que el script de Leaflet esté agregado antes de tu JS.",
+      background: "#0b1120",
+      color: "#e2e8f0",
+      confirmButtonColor: "#0284c7",
+    });
+    return;
+  }
+
+  ubicacionFueAjustadaManual = false;
+
+  Swal.fire({
+    title: "Obteniendo ubicación...",
+    text: "Acepta el permiso de ubicación en el celular.",
+    allowOutsideClick: false,
+    background: "#0b1120",
+    color: "#e2e8f0",
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      Swal.close();
+
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const precision = position.coords.accuracy;
+
+      mostrarMapaContrato(lat, lng, precision);
+      guardarUbicacionContrato(lat, lng, precision, "gps");
+
+      actualizarEstadoUbicacion(
+        `Ubicación capturada correctamente. Precisión aproximada: <b>${Math.round(precision)} metros</b>. Puedes mover el pin si no está exacto.`
+      );
+    },
+    (error) => {
+      let mensaje = "No se pudo obtener la ubicación.";
+
+      if (error.code === error.PERMISSION_DENIED) {
+        mensaje = "El usuario rechazó el permiso de ubicación.";
+      } else if (error.code === error.POSITION_UNAVAILABLE) {
+        mensaje = "La ubicación no está disponible en este momento.";
+      } else if (error.code === error.TIMEOUT) {
+        mensaje = "La solicitud de ubicación tardó demasiado.";
+      }
+
+      Swal.fire({
+        icon: "error",
+        title: "Error de ubicación",
+        text: mensaje,
+        background: "#0b1120",
+        color: "#e2e8f0",
+        confirmButtonColor: "#0284c7",
+      });
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0,
+    }
+  );
+}
+
+function mostrarMapaContrato(lat, lng, precision = null) {
+  if (!contenedorMapaContrato) return;
+
+  contenedorMapaContrato.classList.remove("hidden");
+
+  const coordenadas = [lat, lng];
+
+  if (!mapaContrato) {
+    mapaContrato = L.map("mapaContrato").setView(coordenadas, 18);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(mapaContrato);
+
+    marcadorContrato = L.marker(coordenadas, {
+      draggable: true,
+    }).addTo(mapaContrato);
+
+    marcadorContrato.bindPopup("Ubicación del domicilio").openPopup();
+
+    marcadorContrato.on("dragend", () => {
+      const nuevaPosicion = marcadorContrato.getLatLng();
+
+      ubicacionFueAjustadaManual = true;
+
+      guardarUbicacionContrato(
+        nuevaPosicion.lat,
+        nuevaPosicion.lng,
+        inputUbicacionPrecision?.value || "",
+        "gps_ajustada"
+      );
+
+      actualizarEstadoUbicacion(
+        `Ubicación ajustada manualmente. Latitud: <b>${nuevaPosicion.lat.toFixed(8)}</b>, Longitud: <b>${nuevaPosicion.lng.toFixed(8)}</b>.`
+      );
+    });
+
+    mapaContrato.on("click", (e) => {
+      const latClick = e.latlng.lat;
+      const lngClick = e.latlng.lng;
+
+      ubicacionFueAjustadaManual = true;
+
+      marcadorContrato.setLatLng([latClick, lngClick]);
+
+      guardarUbicacionContrato(
+        latClick,
+        lngClick,
+        inputUbicacionPrecision?.value || "",
+        inputUbicacionLat?.value && inputUbicacionLng?.value ? "gps_ajustada" : "manual"
+      );
+
+      actualizarEstadoUbicacion(
+        `Pin colocado manualmente. Latitud: <b>${latClick.toFixed(8)}</b>, Longitud: <b>${lngClick.toFixed(8)}</b>.`
+      );
+    });
+  } else {
+    mapaContrato.setView(coordenadas, 18);
+    marcadorContrato.setLatLng(coordenadas);
+  }
+
+  if (circuloPrecisionContrato) {
+    mapaContrato.removeLayer(circuloPrecisionContrato);
+  }
+
+  if (precision && !isNaN(Number(precision))) {
+    circuloPrecisionContrato = L.circle(coordenadas, {
+      radius: Number(precision),
+      weight: 1,
+      fillOpacity: 0.12,
+    }).addTo(mapaContrato);
+  }
+
+  setTimeout(() => {
+    mapaContrato.invalidateSize();
+  }, 250);
+}
+
+function guardarUbicacionContrato(lat, lng, precision = "", fuente = "gps") {
+  const latFinal = Number(lat);
+  const lngFinal = Number(lng);
+
+  if (inputUbicacionLat) inputUbicacionLat.value = latFinal.toFixed(8);
+  if (inputUbicacionLng) inputUbicacionLng.value = lngFinal.toFixed(8);
+
+  if (inputUbicacionPrecision) {
+    inputUbicacionPrecision.value = precision !== "" && precision !== null
+      ? Number(precision).toFixed(2)
+      : "";
+  }
+
+  if (inputUbicacionFuente) {
+    inputUbicacionFuente.value = fuente;
+  }
+
+  if (inputUbicacionLatVisible) {
+    inputUbicacionLatVisible.value = latFinal.toFixed(8);
+  }
+
+  if (inputUbicacionLngVisible) {
+    inputUbicacionLngVisible.value = lngFinal.toFixed(8);
+  }
+
+  if (inputUbicacionPrecisionVisible) {
+    inputUbicacionPrecisionVisible.value = precision !== "" && precision !== null
+      ? `${Math.round(Number(precision))} metros`
+      : "Manual";
+  }
+}
+
+function actualizarEstadoUbicacion(mensaje) {
+  if (!estadoUbicacionContrato) return;
+
+  estadoUbicacionContrato.innerHTML = `
+    <div class="flex items-start gap-2">
+      <i class="bi bi-geo-alt-fill text-cyan-400 mt-0.5"></i>
+      <div>${mensaje}</div>
+    </div>
+  `;
+}
+
+function limpiarUbicacionContrato() {
+  if (inputUbicacionLat) inputUbicacionLat.value = "";
+  if (inputUbicacionLng) inputUbicacionLng.value = "";
+  if (inputUbicacionPrecision) inputUbicacionPrecision.value = "";
+  if (inputUbicacionFuente) inputUbicacionFuente.value = "";
+
+  if (inputUbicacionLatVisible) inputUbicacionLatVisible.value = "";
+  if (inputUbicacionLngVisible) inputUbicacionLngVisible.value = "";
+  if (inputUbicacionPrecisionVisible) inputUbicacionPrecisionVisible.value = "";
+
+  if (estadoUbicacionContrato) {
+    estadoUbicacionContrato.innerHTML = "Aún no se ha capturado la ubicación del domicilio.";
+  }
+
+  if (circuloPrecisionContrato && mapaContrato) {
+    mapaContrato.removeLayer(circuloPrecisionContrato);
+    circuloPrecisionContrato = null;
+  }
+
+  if (marcadorContrato && mapaContrato) {
+    mapaContrato.removeLayer(marcadorContrato);
+    marcadorContrato = null;
+  }
+
+  if (mapaContrato) {
+    mapaContrato.remove();
+    mapaContrato = null;
+  }
+
+  if (contenedorMapaContrato) {
+    contenedorMapaContrato.classList.add("hidden");
+  }
+
+  ubicacionFueAjustadaManual = false;
+}
 function radioValue(name) {
   const el = document.querySelector(`input[name="${name}"]:checked`);
   return el ? el.value : "";
@@ -725,6 +989,12 @@ function obtenerDatosFibra() {
       cp: valor("cp"),
       rfc: valor("rfc"),
     },
+    ubicacion: {
+  lat: valor("ubicacion_lat"),
+  lng: valor("ubicacion_lng"),
+  precision: valor("ubicacion_precision"),
+  fuente: valor("ubicacion_fuente"),
+},
     contacto: {
       tipoTelefono: radioValue("tipoTelefono"),
       telefono: valor("telefono"),
@@ -974,6 +1244,7 @@ if (btnLimpiar) {
       form.reset();
       limpiarErrores();
       clearPreviewSignatureFibra();
+      limpiarUbicacionContrato();
 
       Swal.fire({
         icon: "success",
@@ -1401,6 +1672,11 @@ async function guardarContratoFibra(datosFibra) {
   formData.append("estado", datosFibra.domicilio.estado || "");
   formData.append("cp", datosFibra.domicilio.cp || "");
   formData.append("rfc", datosFibra.domicilio.rfc || "");
+  // Ubicación GPS del domicilio
+formData.append("ubicacion_lat", datosFibra.ubicacion?.lat || "");
+formData.append("ubicacion_lng", datosFibra.ubicacion?.lng || "");
+formData.append("ubicacion_precision", datosFibra.ubicacion?.precision || "");
+formData.append("ubicacion_fuente", datosFibra.ubicacion?.fuente || "");
 
   // Contacto
   formData.append("telefono", datosFibra.contacto.telefono || "");
@@ -1771,6 +2047,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarNumeroContrato();
   bindServicioInternetEvents();
   inicializarDocumentosContrato();
+  inicializarUbicacionContrato();
 
   const correoElectronico = document.getElementById("correoElectronico");
 

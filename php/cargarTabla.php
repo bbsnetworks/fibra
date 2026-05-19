@@ -10,24 +10,22 @@ $postdata = json_decode(file_get_contents("php://input"));
 $estado = isset($postdata->estado) ? strtolower(trim($postdata->estado)) : 'activo';
 $busqueda = isset($postdata->busqueda) ? trim($postdata->busqueda) : '';
 
-// Filtro por estado
 $where = [];
 
 if (in_array($estado, ['activo', 'cancelado', 'pausado'])) {
     $estadoSafe = $conexion->real_escape_string($estado);
-    $where[] = "status = '$estadoSafe'";
+    $where[] = "c.status = '$estadoSafe'";
 }
 
-// Filtro por búsqueda
 if ($busqueda !== '') {
     $busquedaSafe = $conexion->real_escape_string($busqueda);
     $where[] = "(
-        idcontrato LIKE '%$busquedaSafe%' OR
-        nombre LIKE '%$busquedaSafe%' OR
-        calle LIKE '%$busquedaSafe%' OR
-        numero LIKE '%$busquedaSafe%' OR
-        colonia LIKE '%$busquedaSafe%' OR
-        municipio LIKE '%$busquedaSafe%'
+        c.idcontrato LIKE '%$busquedaSafe%' OR
+        c.nombre LIKE '%$busquedaSafe%' OR
+        c.calle LIKE '%$busquedaSafe%' OR
+        c.numero LIKE '%$busquedaSafe%' OR
+        c.colonia LIKE '%$busquedaSafe%' OR
+        c.municipio LIKE '%$busquedaSafe%'
     )";
 }
 
@@ -38,21 +36,36 @@ if (!empty($where)) {
 
 $sql = "
 SELECT 
-  idcontrato,
-  nombre,
-  CONCAT(calle, ' ', numero, ', ', colonia, ', ', municipio) AS direccion,
-  fecha,
-  fecha_cancelacion,
-  tarifa,
-  status
-FROM contratos
+    c.idcontrato,
+    c.nombre,
+    CONCAT(c.calle, ' ', c.numero, ', ', c.colonia, ', ', c.municipio) AS direccion,
+    c.fecha,
+    c.fecha_cancelacion,
+    c.tarifa,
+    c.status,
+    c.ubicacion_lat,
+    c.ubicacion_lng,
+    c.ubicacion_precision,
+    c.ubicacion_fuente,
+    c.ubicacion_fecha,
+    CASE 
+        WHEN cl.idcliente IS NOT NULL THEN 1
+        ELSE 0
+    END AS usuario_creado
+FROM contratos c
+LEFT JOIN clientes cl ON c.idcontrato = cl.idcliente
 $filtro_sql
-ORDER BY idcontrato DESC
+ORDER BY c.idcontrato DESC
 ";
 
 $result = $conexion->query($sql);
 
-function paqueteTexto($tarifa)
+function h($value): string
+{
+    return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
+}
+
+function paqueteTexto($tarifa): string
 {
     switch ((string) $tarifa) {
         case "1":
@@ -76,213 +89,282 @@ function paqueteTexto($tarifa)
     }
 }
 
+function statusBadge($status): string
+{
+    $status = strtolower(trim((string)$status));
+
+    if ($status === "activo") {
+        return '
+            <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
+                <i class="bi bi-check-circle-fill"></i>
+                Activo
+            </span>';
+    }
+
+    if ($status === "cancelado") {
+        return '
+            <span class="inline-flex items-center gap-2 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-400">
+                <i class="bi bi-x-circle-fill"></i>
+                Cancelado
+            </span>';
+    }
+
+    if ($status === "pausado") {
+        return '
+            <span class="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-300">
+                <i class="bi bi-pause-circle-fill"></i>
+                Pausado
+            </span>';
+    }
+
+    return '
+        <span class="inline-flex items-center gap-2 rounded-full bg-slate-500/15 px-3 py-1 text-xs font-semibold text-slate-300">
+            ' . h($status) . '
+        </span>';
+}
+
+function estadoCreadoBadge($status, $usuarioCreado): string
+{
+    $status = strtolower(trim((string)$status));
+
+    if ($status === "cancelado") {
+        return '
+            <span class="inline-flex items-center gap-2 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-400">
+                <i class="bi bi-x-circle-fill"></i>
+                Cancelado
+            </span>';
+    }
+
+    if ((int)$usuarioCreado === 1) {
+        return '
+            <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
+                <i class="bi bi-check-circle-fill"></i>
+                Cliente creado
+            </span>';
+    }
+
+    return '
+        <span class="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-300">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            Pendiente de crear
+        </span>';
+}
+
+function botonAccion($icono, $titulo, $clases, $onclick): string
+{
+    return '
+        <button
+            type="button"
+            class="min-h-[46px] w-full inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-lg transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-cyan-300/50 ' . $clases . '"
+            onclick="' . $onclick . '"
+            title="' . h($titulo) . '">
+            <i class="bi ' . h($icono) . ' text-lg"></i>
+            <span>' . h($titulo) . '</span>
+        </button>
+    ';
+}
+
 if ($result && $result->num_rows > 0) {
-    echo '<div class="w-full overflow-x-auto">';
-    echo '<table class="min-w-full overflow-hidden rounded-2xl text-sm text-white">';
-
-    echo '<thead>';
-    echo '<tr class="border-b border-white/10 bg-[#0f172a] text-xs uppercase tracking-wide text-slate-300">';
-    echo '<th class="px-4 py-4 text-center font-semibold">Creado</th>';
-    echo '<th class="px-4 py-4 text-center font-semibold">ID</th>';
-    echo '<th class="px-4 py-4 text-left font-semibold">Nombre</th>';
-    echo '<th class="px-4 py-4 text-left font-semibold">Dirección</th>';
-    echo '<th class="px-4 py-4 text-center font-semibold">Fecha</th>';
-    echo '<th class="px-4 py-4 text-center font-semibold">Status</th>';
-
-    if ($estado === 'cancelado') {
-        echo '<th class="px-4 py-4 text-center font-semibold">Fecha cancelación</th>';
-    } else {
-        echo '<th class="px-4 py-4 text-center font-semibold">Paquete</th>';
-    }
-
-    echo '<th class="px-4 py-4 text-center font-semibold">Comprobante</th>';
-    echo '<th class="px-4 py-4 text-center font-semibold">Editar</th>';
-    echo '<th class="px-4 py-4 text-center font-semibold">Descargar</th>';
-    echo '<th class="px-4 py-4 text-center font-semibold">Crear</th>';
-    echo '<th class="px-4 py-4 text-center font-semibold">Reenviar</th>';
-
-    if ($estado === 'activo') {
-        echo '<th class="px-4 py-4 text-center font-semibold">Cancelar</th>';
-    } elseif ($estado === 'cancelado') {
-        echo '<th class="px-4 py-4 text-center font-semibold">Reactivar</th>';
-    }
-
-    echo '</tr>';
-    echo '</thead>';
-
-    echo '<tbody>';
+    echo '<div class="grid grid-cols-1 gap-5 xl:grid-cols-2">';
 
     while ($row = $result->fetch_assoc()) {
         $idc = (int) $row['idcontrato'];
-        $nombre = htmlspecialchars($row['nombre'] ?? '', ENT_QUOTES, 'UTF-8');
-        $dir = htmlspecialchars($row['direccion'] ?? '', ENT_QUOTES, 'UTF-8');
-        $fecha = htmlspecialchars($row['fecha'] ?? '', ENT_QUOTES, 'UTF-8');
-        $fcanc = htmlspecialchars($row['fecha_cancelacion'] ?? '', ENT_QUOTES, 'UTF-8');
-        $status = strtolower(trim($row['status'] ?? ''));
-        $tarifa = htmlspecialchars($row['tarifa'] ?? '', ENT_QUOTES, 'UTF-8');
+        $nombre = h($row['nombre']);
+        $nombreData = h($row['nombre']);
+        $dir = h($row['direccion']);
+        $fecha = h($row['fecha']);
+        $status = strtolower(trim((string)($row['status'] ?? '')));
+        $paquete = h(paqueteTexto($row['tarifa']));
+        $usuarioCreado = (int)($row['usuario_creado'] ?? 0);
 
-        // Verifica si ya existe usuario creado
-        $sql2 = "SELECT CASE 
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM contratos c
-                        JOIN clientes cl ON c.idcontrato = cl.idcliente
-                        WHERE c.idcontrato = $idc
-                    ) THEN TRUE
-                    ELSE FALSE
-                END AS usuario_creado";
-        $result2 = $conexion->query($sql2);
+        $fechaCancelacion = $row['fecha_cancelacion']
+            ? date('Y-m-d H:i', strtotime($row['fecha_cancelacion']))
+            : '—';
 
-        $usuario_creado = 0;
-        if ($result2 && $row2 = $result2->fetch_assoc()) {
-            $usuario_creado = (int) $row2['usuario_creado'];
-        }
+        $lat = $row['ubicacion_lat'];
+        $lng = $row['ubicacion_lng'];
+        $precision = $row['ubicacion_precision'];
+        $fuente = $row['ubicacion_fuente'];
 
-        echo '<tr class="border-b border-white/5 bg-white/[0.02] transition hover:bg-cyan-400/5">';
+        $fechaUbicacion = $row['ubicacion_fecha']
+            ? date('Y-m-d H:i', strtotime($row['ubicacion_fecha']))
+            : '';
 
-        // Columna creado
-        echo '<td class="px-4 py-4 text-center">';
-        if ($status === "cancelado") {
-            echo '<span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-500/15 text-red-400" title="Contrato cancelado">
-                    <i class="bi bi-x-circle-fill text-lg"></i>
-                  </span>';
-        } elseif ($usuario_creado === 1) {
-            echo '<span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400" title="Cliente creado">
-                    <i class="bi bi-check-circle-fill text-lg"></i>
-                  </span>';
+        $tieneUbicacion = ($lat !== null && $lat !== '' && $lng !== null && $lng !== '');
+
+        echo '
+        <article class="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0b1a2d] p-5 shadow-xl shadow-black/20 transition duration-200 hover:border-cyan-400/30 hover:bg-[#0d2038]">
+            
+            <div class="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-cyan-400/5 transition group-hover:bg-cyan-400/10"></div>
+
+            <div class="relative flex flex-col gap-5">
+                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div class="min-w-0">
+                        <div class="mb-2 flex flex-wrap items-center gap-2">
+                            <span class="inline-flex rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-300">
+                                Contrato #' . $idc . '
+                            </span>
+                            ' . statusBadge($status) . '
+                        </div>
+
+                        <h3 class="truncate text-lg font-bold text-white">
+                            ' . $nombre . '
+                        </h3>
+
+                        <p class="mt-2 flex items-start gap-2 text-sm text-slate-300">
+                            <i class="bi bi-geo-alt text-cyan-300 mt-0.5"></i>
+                            <span>' . $dir . '</span>
+                        </p>
+                    </div>
+
+                    <div class="shrink-0">
+                        ' . estadoCreadoBadge($status, $usuarioCreado) . '
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
+                        <p class="mb-1 text-xs uppercase tracking-wide text-white/40">Fecha</p>
+                        <p class="mb-0 text-sm font-semibold text-white">' . ($fecha ?: '—') . '</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
+                        <p class="mb-1 text-xs uppercase tracking-wide text-white/40">' . ($status === 'cancelado' ? 'Cancelación' : 'Paquete') . '</p>
+                        <p class="mb-0 text-sm font-semibold text-white">' . ($status === 'cancelado' ? h($fechaCancelacion) : $paquete) . '</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
+                        <p class="mb-1 text-xs uppercase tracking-wide text-white/40">Ubicación</p>';
+
+        if ($tieneUbicacion) {
+            echo '
+                        <p class="mb-0 text-sm font-semibold text-emerald-400">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Guardada
+                        </p>';
         } else {
-            echo '<span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/15 text-amber-300" title="Cliente no creado">
-                    <i class="bi bi-exclamation-circle-fill text-lg"></i>
-                  </span>';
+            echo '
+                        <p class="mb-0 text-sm font-semibold text-slate-500">
+                            <i class="bi bi-dash-circle"></i>
+                            Sin ubicación
+                        </p>';
         }
-        echo '</td>';
 
-        echo '<td class="px-4 py-4 text-center">
-                <span class="inline-flex rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-300">'
-            . $idc .
-            '</span>
-              </td>';
+        echo '
+                    </div>
+                </div>
 
-        echo '<td class="px-4 py-4 text-left font-medium text-white">' . $nombre . '</td>';
-        echo '<td class="px-4 py-4 text-left text-slate-300">' . $dir . '</td>';
-        echo '<td class="px-4 py-4 text-center text-slate-200 whitespace-nowrap">' . $fecha . '</td>';
+                <div class="mt-1 border-t border-white/10 pt-4">
+                    <div class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        <i class="bi bi-lightning-charge-fill text-cyan-300"></i>
+                        Acciones del contrato
+                    </div>
 
-        // Status badge
-        echo '<td class="px-4 py-4 text-center">';
-        if ($status === "activo") {
-            echo '<span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-400">
-                    <i class="bi bi-check-circle-fill"></i> Activo
-                  </span>';
-        } elseif ($status === "cancelado") {
-            echo '<span class="inline-flex items-center gap-2 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-400">
-                    <i class="bi bi-x-circle-fill"></i> Cancelado
-                  </span>';
-        } elseif ($status === "pausado") {
-            echo '<span class="inline-flex items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-300">
-                    <i class="bi bi-pause-circle-fill"></i> Pausado
-                  </span>';
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">';
+
+        echo botonAccion(
+            'bi-pencil-square',
+            'Editar',
+            'bg-amber-500/90 shadow-amber-500/20 hover:bg-amber-400',
+            'editContract(' . $idc . ')'
+        );
+
+        echo botonAccion(
+            'bi-download',
+            'Descargar',
+            'bg-emerald-500/90 shadow-emerald-500/20 hover:bg-emerald-400',
+            'descargarContrato(' . $idc . ')'
+        );
+
+        echo botonAccion(
+            'bi-person-plus',
+            'Crear',
+            'bg-cyan-500/90 shadow-cyan-500/20 hover:bg-cyan-400',
+            'addContract(' . $idc . ')'
+        );
+
+        echo botonAccion(
+            'bi-envelope-arrow-up',
+            'Reenviar',
+            'bg-indigo-500/90 shadow-indigo-500/20 hover:bg-indigo-400',
+            'abrirModalReenviarContrato(' . $idc . ')'
+        );
+
+        if ($tieneUbicacion) {
+            echo '
+                <button
+                    type="button"
+                    class="btn-ver-ubicacion-contrato min-h-[46px] w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-500/90 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-300/50"
+                    data-id="' . $idc . '"
+                    data-nombre="' . $nombreData . '"
+                    data-lat="' . h($lat) . '"
+                    data-lng="' . h($lng) . '"
+                    data-precision="' . h($precision) . '"
+                    data-fuente="' . h($fuente) . '"
+                    data-fecha="' . h($fechaUbicacion) . '"
+                    title="Ver ubicación">
+                    <i class="bi bi-geo-alt-fill text-lg"></i>
+                    <span>Ubicación</span>
+                </button>';
         } else {
-            echo '<span class="text-slate-300">' . htmlspecialchars($status, ENT_QUOTES, 'UTF-8') . '</span>';
+            echo '
+                <button
+                    type="button"
+                    disabled
+                    class="min-h-[46px] w-full inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-slate-700/60 px-4 py-3 text-sm font-bold text-slate-400"
+                    title="Este contrato no tiene ubicación guardada">
+                    <i class="bi bi-geo-alt text-lg"></i>
+                    <span>Sin ubicación</span>
+                </button>';
         }
-        echo '</td>';
 
-        // Paquete o fecha cancelación
-        if ($estado === 'cancelado') {
-            $fcanc_fmt = $fcanc ? date('Y-m-d H:i', strtotime($fcanc)) : '—';
-            echo '<td class="px-4 py-4 text-center text-slate-200 whitespace-nowrap">' . $fcanc_fmt . '</td>';
-        } else {
-            echo '<td class="px-4 py-4 text-center text-slate-100">' . paqueteTexto($tarifa) . '</td>';
-        }
-
-        // Comprobante
-        echo '<td class="px-4 py-4 text-center">';
         if ($status === 'cancelado') {
-            echo '<button
-                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/90 text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.03] hover:bg-violet-400"
-                    title="Descargar comprobante de cancelación"
-                    onclick="descargarCancelacion(' . $idc . ')">
-                    <i class="bi bi-file-earmark-arrow-down text-lg"></i>
-                  </button>';
-        } else {
-            echo '<span class="text-slate-500">—</span>';
-        }
-        echo '</td>';
+            echo botonAccion(
+                'bi-file-earmark-arrow-down',
+                'Comprobante',
+                'bg-violet-500/90 shadow-violet-500/20 hover:bg-violet-400',
+                'descargarCancelacion(' . $idc . ')'
+            );
 
-        // Editar
-        echo '<td class="px-4 py-4 text-center">
-                <button
-                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/90 text-white shadow-lg shadow-amber-500/20 transition hover:scale-[1.03] hover:bg-amber-400"
-                  onclick="editContract(' . $idc . ')"
-                  title="Editar contrato">
-                  <i class="bi bi-pencil-square text-lg"></i>
-                </button>
-              </td>';
-
-        // Descargar
-        echo '<td class="px-4 py-4 text-center">
-                <button
-                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/90 text-white shadow-lg shadow-emerald-500/20 transition hover:scale-[1.03] hover:bg-emerald-400"
-                  onclick="descargarContrato(' . $idc . ')"
-                  title="Descargar contrato">
-                  <i class="bi bi-download text-lg"></i>
-                </button>
-              </td>';
-
-        // Crear
-        echo '<td class="px-4 py-4 text-center">
-                <button
-                  class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/90 text-white shadow-lg shadow-cyan-500/20 transition hover:scale-[1.03] hover:bg-cyan-400"
-                  onclick="addContract(' . $idc . ')"
-                  title="Crear cliente">
-                  <i class="bi bi-person-plus text-lg"></i>
-                </button>
-              </td>';
-        // Reenviar correo
-        echo '<td class="px-4 py-4 text-center">
-        <button
-          class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/90 text-white shadow-lg shadow-indigo-500/20 transition hover:scale-[1.03] hover:bg-indigo-400"
-          onclick="abrirModalReenviarContrato(' . $idc . ')"
-          title="Reenviar contrato por correo">
-          <i class="bi bi-envelope-arrow-up text-lg"></i>
-        </button>
-      </td>';
-        // Acción dinámica
-        if ($estado === 'activo') {
-            echo '<td class="px-4 py-4 text-center">
-                    <button
-                      class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/90 text-white shadow-lg shadow-red-500/20 transition hover:scale-[1.03] hover:bg-red-400"
-                      onclick="confirmarCancelacion(' . $idc . ')"
-                      title="Cancelar contrato">
-                      <i class="bi bi-x-circle text-lg"></i>
-                    </button>
-                  </td>';
-        } elseif ($estado === 'cancelado') {
-            echo '<td class="px-4 py-4 text-center">
-                    <button
-                      class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/90 text-white shadow-lg shadow-emerald-500/20 transition hover:scale-[1.03] hover:bg-emerald-400"
-                      onclick="confirmarReactivacion(' . $idc . ')"
-                      title="Reactivar contrato">
-                      <i class="bi bi-arrow-clockwise text-lg"></i>
-                    </button>
-                  </td>';
+            echo botonAccion(
+                'bi-arrow-clockwise',
+                'Reactivar',
+                'bg-emerald-500/90 shadow-emerald-500/20 hover:bg-emerald-400',
+                'confirmarReactivacion(' . $idc . ')'
+            );
+        } elseif ($status === 'activo') {
+            echo botonAccion(
+                'bi-x-circle',
+                'Cancelar',
+                'bg-red-500/90 shadow-red-500/20 hover:bg-red-400',
+                'confirmarCancelacion(' . $idc . ')'
+            );
         }
 
-        echo '</tr>';
+        echo '
+                    </div>
+                </div>
+            </div>
+        </article>';
     }
 
-    echo '</tbody>';
-    echo '</table>';
     echo '</div>';
 } else {
     echo '
     <div class="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
-      <div>
-        <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
-          <i class="bi bi-inbox text-xl"></i>
+        <div>
+            <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
+                <i class="bi bi-inbox text-xl"></i>
+            </div>
+
+            <h3 class="text-base font-semibold text-white">
+                Sin resultados
+            </h3>
+
+            <p class="mt-2 text-sm text-white/55">
+                No se encontraron contratos con los filtros seleccionados.
+            </p>
         </div>
-        <h3 class="text-base font-semibold text-white">Sin resultados</h3>
-        <p class="mt-2 text-sm text-white/55">No se encontraron contratos con los filtros seleccionados.</p>
-      </div>
     </div>';
 }
 

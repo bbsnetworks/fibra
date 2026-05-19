@@ -245,25 +245,13 @@ if (!is_array($metodosPago)) {
 
     <div class="grid grid-cols-1 gap-5 md:grid-cols-12">
       <div class="md:col-span-4">
-        <label for="modemt" class="mb-2 block text-sm font-medium text-white/80">Modem entregado</label>
-        <select id="modemt" name="modemt"
-          class="w-full rounded-2xl border border-white/10 bg-[#071322] px-4 py-3 text-white outline-none focus:border-cyan-400/40">
-          <option value="1" <?= selected($row['modeme'], '1') ?>>Comodato</option>
-          <option value="2" <?= selected($row['modeme'], '2') ?>>Compraventa</option>
-        </select>
-      </div>
-
-      <div class="md:col-span-4">
-        <label for="tipo_entrega_equipo" class="mb-2 block text-sm font-medium text-white/80">Tipo de entrega de
-          equipo</label>
-        <select id="tipo_entrega_equipo" name="tipo_entrega_equipo"
-          class="w-full rounded-2xl border border-white/10 bg-[#071322] px-4 py-3 text-white outline-none focus:border-cyan-400/40">
-          <option value="">Selecciona una opción</option>
-          <option value="comodato" <?= selected($row['tipo_entrega_equipo'], 'comodato') ?>>Comodato</option>
-          <option value="compraventa" <?= selected($row['tipo_entrega_equipo'], 'compraventa') ?>>Compraventa</option>
-          <option value="prestamo" <?= selected($row['tipo_entrega_equipo'], 'prestamo') ?>>Préstamo</option>
-        </select>
-      </div>
+  <label for="modemt" class="mb-2 block text-sm font-medium text-white/80">Modem entregado</label>
+  <select id="modemt" name="modemt"
+    class="w-full rounded-2xl border border-white/10 bg-[#071322] px-4 py-3 text-white outline-none focus:border-cyan-400/40">
+    <option value="1" <?= selected($row['modeme'], '1') ?>>Comodato</option>
+    <option value="2" <?= selected($row['modeme'], '2') ?>>Compraventa</option>
+  </select>
+</div>
 
       <div class="md:col-span-4">
         <label for="marca" class="mb-2 block text-sm font-medium text-white/80">Marca</label>

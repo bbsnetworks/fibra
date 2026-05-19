@@ -14,7 +14,14 @@ const modalReenviarCorreoEl = document.getElementById("modalReenviarCorreo");
 const modalReenviarCorreo = modalReenviarCorreoEl
   ? new bootstrap.Modal(modalReenviarCorreoEl)
   : null;
+const modalUbicacionContratoEl = document.getElementById("modalUbicacionContrato");
+const modalUbicacionContrato = modalUbicacionContratoEl
+  ? new bootstrap.Modal(modalUbicacionContratoEl)
+  : null;
 
+let mapaUbicacionContrato = null;
+let marcadorUbicacionContrato = null;
+let circuloUbicacionContrato = null;
 const modalAgregar = modalAgregarEl
   ? new bootstrap.Modal(modalAgregarEl)
   : null;
@@ -43,7 +50,96 @@ function mostrarMensajeTabla(mensaje, icono = "bi-search") {
     </div>
   `;
 }
+function abrirUbicacionContrato(data) {
+  const lat = Number(data.lat);
+  const lng = Number(data.lng);
+  const precision = data.precision ? Number(data.precision) : null;
+  const nombre = data.nombre || "Contrato";
+  const id = data.id || "";
 
+  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    Swal.fire({
+      ...swalDark,
+      title: "Sin ubicación",
+      text: "Este contrato no tiene ubicación guardada.",
+      icon: "warning",
+    });
+    return;
+  }
+
+  document.getElementById("modalUbicacionSubtitulo").textContent =
+    `Contrato #${id} - ${nombre}`;
+
+  document.getElementById("modalUbicacionLat").textContent = lat.toFixed(8);
+  document.getElementById("modalUbicacionLng").textContent = lng.toFixed(8);
+  document.getElementById("modalUbicacionPrecision").textContent =
+    precision ? `${Math.round(precision)} metros` : "No registrada";
+
+  const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+  const btnGoogleMaps = document.getElementById("btnAbrirGoogleMaps");
+
+  if (btnGoogleMaps) {
+    btnGoogleMaps.href = googleMapsUrl;
+  }
+
+  modalUbicacionContrato?.show();
+
+  setTimeout(() => {
+    pintarMapaUbicacionContrato(lat, lng, precision);
+  }, 300);
+}
+
+function pintarMapaUbicacionContrato(lat, lng, precision = null) {
+  if (typeof L === "undefined") {
+    Swal.fire({
+      ...swalDark,
+      title: "Mapa no disponible",
+      text: "No se pudo cargar Leaflet.",
+      icon: "error",
+    });
+    return;
+  }
+
+  const contenedorMapa = document.getElementById("mapaUbicacionContrato");
+  if (!contenedorMapa) return;
+
+  const coordenadas = [lat, lng];
+
+  if (!mapaUbicacionContrato) {
+    mapaUbicacionContrato = L.map("mapaUbicacionContrato").setView(coordenadas, 18);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(mapaUbicacionContrato);
+
+    marcadorUbicacionContrato = L.marker(coordenadas).addTo(mapaUbicacionContrato);
+    marcadorUbicacionContrato.bindPopup("Ubicación del contrato").openPopup();
+  } else {
+    mapaUbicacionContrato.setView(coordenadas, 18);
+
+    if (marcadorUbicacionContrato) {
+      marcadorUbicacionContrato.setLatLng(coordenadas);
+    }
+  }
+
+  if (circuloUbicacionContrato) {
+    mapaUbicacionContrato.removeLayer(circuloUbicacionContrato);
+    circuloUbicacionContrato = null;
+  }
+
+  if (precision && !isNaN(Number(precision))) {
+    circuloUbicacionContrato = L.circle(coordenadas, {
+      radius: Number(precision),
+      weight: 1,
+      fillOpacity: 0.12,
+    }).addTo(mapaUbicacionContrato);
+  }
+
+  setTimeout(() => {
+    mapaUbicacionContrato.invalidateSize();
+  }, 250);
+}
 async function cargarTabla() {
   const estado = filtroEstadoEl?.value || "activo";
   const busqueda = busquedaEl?.value?.trim() || "";
@@ -1054,8 +1150,9 @@ async function updateContrato() {
   let penalidadTexto = document.getElementById("penalidad_texto")?.value || "";
 
   let modemt = document.getElementById("modemt").value;
-  let tipoEntregaEquipo =
-    document.getElementById("tipo_entrega_equipo")?.value || "";
+
+// Usamos el mismo valor de "Modem entregado" para guardar también tipo_entrega_equipo
+let tipoEntregaEquipo = modemt;
   let marca = document.getElementById("marca").value;
   let modelo = document.getElementById("modelo").value;
   let serie = document.getElementById("serie").value;
@@ -1287,7 +1384,19 @@ document.addEventListener("change", (e) => {
     else if (reconexion.value === "2") mdesconexion.value = "$500";
   }
 });
+document.addEventListener("click", (e) => {
+  const btnUbicacion = e.target.closest(".btn-ver-ubicacion-contrato");
 
+  if (!btnUbicacion) return;
+
+  abrirUbicacionContrato({
+    id: btnUbicacion.dataset.id,
+    nombre: btnUbicacion.dataset.nombre,
+    lat: btnUbicacion.dataset.lat,
+    lng: btnUbicacion.dataset.lng,
+    precision: btnUbicacion.dataset.precision,
+  });
+});
 /* Buscador */
 btnBuscarEl?.addEventListener("click", cargarTabla);
 

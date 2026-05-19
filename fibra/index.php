@@ -19,6 +19,7 @@ if (!isset($_SESSION['username'])) {
     <script src="../js/jspdf.min.js"></script>
     <script src="../js/signature_pad.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
         body {
@@ -316,6 +317,68 @@ if (!isset($_SESSION['username'])) {
                         <label class="label-main">RFC</label>
                         <input type="text" id="rfc" class="input-dark" placeholder="RFC">
                     </div>
+                </div>
+
+                <!-- UBICACIÓN GPS DEL DOMICILIO -->
+                <div class="mt-6 rounded-2xl border border-cyan-400/20 bg-slate-950/40 p-4 md:p-5">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                <i class="bi bi-geo-alt-fill text-cyan-400"></i>
+                                Ubicación del domicilio
+                            </h3>
+                            <p class="text-sm text-slate-400 mt-1">
+                                Obtén la ubicación actual del celular y ajusta el pin si no está exactamente en el
+                                domicilio.
+                            </p>
+                        </div>
+
+                        <button type="button" id="btnObtenerUbicacionContrato"
+                            class="btn-main flex items-center justify-center gap-2">
+                            <i class="bi bi-crosshair"></i>
+                            Obtener ubicación
+                        </button>
+                    </div>
+
+                    <div id="estadoUbicacionContrato"
+                        class="mb-4 rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
+                        Aún no se ha capturado la ubicación del domicilio.
+                    </div>
+
+                    <div id="mapaContrato"
+                        class="hidden w-full h-[360px] rounded-2xl overflow-hidden border border-slate-700 bg-slate-900">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div>
+                            <label class="label-main">Latitud</label>
+                            <input type="text" id="ubicacion_lat_visible" class="input-dark" placeholder="Sin capturar"
+                                readonly>
+                        </div>
+
+                        <div>
+                            <label class="label-main">Longitud</label>
+                            <input type="text" id="ubicacion_lng_visible" class="input-dark" placeholder="Sin capturar"
+                                readonly>
+                        </div>
+
+                        <div>
+                            <label class="label-main">Precisión aproximada</label>
+                            <input type="text" id="ubicacion_precision_visible" class="input-dark"
+                                placeholder="Sin capturar" readonly>
+                        </div>
+                    </div>
+
+                    <p class="hint mt-3">
+                        La ubicación no reemplaza la dirección escrita; solo ayuda a encontrar más rápido el domicilio
+                        para futuras visitas.
+                    </p>
+
+                    <!-- Campos ocultos que se enviarán al guardar el contrato -->
+                    <input type="hidden" id="ubicacion_lat" name="ubicacion_lat">
+                    <input type="hidden" id="ubicacion_lng" name="ubicacion_lng">
+                    <input type="hidden" id="ubicacion_precision" name="ubicacion_precision">
+                    <input type="hidden" id="ubicacion_fuente" name="ubicacion_fuente">
                 </div>
             </section>
 
@@ -1057,6 +1120,7 @@ if (!isset($_SESSION['username'])) {
     <!-- <script src="../js/fibra_preview.js"></script> -->
     <script src="../js/swaldark.js"></script>
     <script src="../js/sidebar.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
 
 </html>

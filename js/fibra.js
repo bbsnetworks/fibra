@@ -706,18 +706,19 @@ if (correoElectronico) {
   }
 }
   const radiosRequeridos = [
-    "tipoTelefono",
-    "aplicaReconexcion",
-    "tipoVigencia",
-    "tipoEntregaEquipo",
-    "autorizaCargoTarjeta",
-    "envioFactura",
-    "envioCartaDerechos",
-    "envioContratoAdhesion",
-    "medioElectronico",
-    "autorizaCederInfo",
-    "autorizaLlamadasPromo",
-  ];
+  "tipoTelefono",
+  "aplicaReconexcion",
+  "tipoVigencia",
+  "tipoEntregaEquipo",
+  "modalidadPagoEquipo",
+  "autorizaCargoTarjeta",
+  "envioFactura",
+  "envioCartaDerechos",
+  "envioContratoAdhesion",
+  "medioElectronico",
+  "autorizaCederInfo",
+  "autorizaLlamadasPromo",
+];
 
   radiosRequeridos.forEach((name) => {
     const marcado = document.querySelector(`input[name="${name}"]:checked`);
@@ -1640,6 +1641,7 @@ async function generarPdfFibra(datosFormulario) {
       color: "#e2e8f0",
       confirmButtonColor: "#0284c7",
     });
+    throw error;
   }
 }
 async function guardarContratoFibra(datosFibra) {
@@ -1845,19 +1847,22 @@ async function accionGenerar() {
   try {
     limpiarErrores();
 
+    // 1. Validar formulario completo primero
+    if (!validarFormulario()) return;
+
+    // 2. Validar que el número de contrato esté disponible
     const contratoValido = await validarNumeroContrato();
     if (!contratoValido) return;
 
-    if (!validarFormulario()) return;
-
+    // 3. Obtener datos ya validados
     const datosFibra = obtenerDatosFibra();
     console.log("DATOS FIBRA:", datosFibra);
 
-    // 1. Generar PDF
-    await generarPdfFibra(datosFibra);
-
-    // 2. Guardar en base de datos
+    // 4. Guardar primero en base de datos
     const respuestaGuardado = await guardarContratoFibra(datosFibra);
+
+    // 5. Si se guardó correctamente, ahora sí generar PDF
+    await generarPdfFibra(datosFibra);
 
     Swal.fire({
       icon: "success",
@@ -1869,6 +1874,7 @@ async function accionGenerar() {
     });
   } catch (error) {
     console.error(error);
+
     Swal.fire({
       icon: "error",
       title: "Error",

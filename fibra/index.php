@@ -568,14 +568,16 @@ if (!isset($_SESSION['username'])) {
                             </div>
 
                             <div data-radio-group="modalidadPagoEquipo">
-                                <label class="label-main">Modalidad de pago</label>
+                                <label class="label-main">Modalidad de pago *</label>
                                 <div class="flex flex-wrap gap-6 mt-2">
                                     <label class="radio-line">
-                                        <input type="radio" name="modalidadPagoEquipo" value="1" class="mini-check">
+                                        <input type="radio" name="modalidadPagoEquipo" value="1"
+                                            class="mini-check requerido-radio">
                                         <span>Pago único</span>
                                     </label>
                                     <label class="radio-line">
-                                        <input type="radio" name="modalidadPagoEquipo" value="2" class="mini-check">
+                                        <input type="radio" name="modalidadPagoEquipo" value="2"
+                                            class="mini-check requerido-radio">
                                         <span>Diferido</span>
                                     </label>
                                 </div>

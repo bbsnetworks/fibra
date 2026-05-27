@@ -14,7 +14,9 @@ const modalReenviarCorreoEl = document.getElementById("modalReenviarCorreo");
 const modalReenviarCorreo = modalReenviarCorreoEl
   ? new bootstrap.Modal(modalReenviarCorreoEl)
   : null;
-const modalUbicacionContratoEl = document.getElementById("modalUbicacionContrato");
+const modalUbicacionContratoEl = document.getElementById(
+  "modalUbicacionContrato",
+);
 const modalUbicacionContrato = modalUbicacionContratoEl
   ? new bootstrap.Modal(modalUbicacionContratoEl)
   : null;
@@ -22,6 +24,20 @@ const modalUbicacionContrato = modalUbicacionContratoEl
 let mapaUbicacionContrato = null;
 let marcadorUbicacionContrato = null;
 let circuloUbicacionContrato = null;
+
+let mapaUbicacionEdit = null;
+let marcadorUbicacionEdit = null;
+let circuloUbicacionEdit = null;
+
+let ubicacionEditLat = null;
+let ubicacionEditLng = null;
+let ubicacionEditPrecision = null;
+
+let ubicacionPendienteLat = null;
+let ubicacionPendienteLng = null;
+let ubicacionPendientePrecision = null;
+let ubicacionPinMovido = false;
+
 const modalAgregar = modalAgregarEl
   ? new bootstrap.Modal(modalAgregarEl)
   : null;
@@ -57,7 +73,7 @@ function abrirUbicacionContrato(data) {
   const nombre = data.nombre || "Contrato";
   const id = data.id || "";
 
-  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     Swal.fire({
       ...swalDark,
       title: "Sin ubicación",
@@ -72,8 +88,9 @@ function abrirUbicacionContrato(data) {
 
   document.getElementById("modalUbicacionLat").textContent = lat.toFixed(8);
   document.getElementById("modalUbicacionLng").textContent = lng.toFixed(8);
-  document.getElementById("modalUbicacionPrecision").textContent =
-    precision ? `${Math.round(precision)} metros` : "No registrada";
+  document.getElementById("modalUbicacionPrecision").textContent = precision
+    ? `${Math.round(precision)} metros`
+    : "No registrada";
 
   const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
   const btnGoogleMaps = document.getElementById("btnAbrirGoogleMaps");
@@ -100,20 +117,51 @@ function pintarMapaUbicacionContrato(lat, lng, precision = null) {
     return;
   }
 
+  lat = Number(lat);
+  lng = Number(lng);
+  precision = precision ? Number(precision) : null;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    Swal.fire({
+      ...swalDark,
+      title: "Ubicación inválida",
+      text: "Las coordenadas de este contrato no son válidas.",
+      icon: "warning",
+    });
+    return;
+  }
+
   const contenedorMapa = document.getElementById("mapaUbicacionContrato");
   if (!contenedorMapa) return;
 
   const coordenadas = [lat, lng];
 
+  // Protección: si la variable quedó apuntando al DIV por el id del HTML,
+  // la limpiamos para crear correctamente el mapa de Leaflet.
+  if (
+    mapaUbicacionContrato &&
+    typeof mapaUbicacionContrato.setView !== "function"
+  ) {
+    mapaUbicacionContrato = null;
+    marcadorUbicacionContrato = null;
+    circuloUbicacionContrato = null;
+  }
+
   if (!mapaUbicacionContrato) {
-    mapaUbicacionContrato = L.map("mapaUbicacionContrato").setView(coordenadas, 18);
+    mapaUbicacionContrato = L.map("mapaUbicacionContrato", {
+      maxZoom: 19,
+    }).setView(coordenadas, 18);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
+      maxNativeZoom: 19,
       attribution: "&copy; OpenStreetMap",
     }).addTo(mapaUbicacionContrato);
 
-    marcadorUbicacionContrato = L.marker(coordenadas).addTo(mapaUbicacionContrato);
+    marcadorUbicacionContrato = L.marker(coordenadas).addTo(
+      mapaUbicacionContrato,
+    );
+
     marcadorUbicacionContrato.bindPopup("Ubicación del contrato").openPopup();
   } else {
     mapaUbicacionContrato.setView(coordenadas, 18);
@@ -128,18 +176,316 @@ function pintarMapaUbicacionContrato(lat, lng, precision = null) {
     circuloUbicacionContrato = null;
   }
 
-  if (precision && !isNaN(Number(precision))) {
+  if (precision && Number.isFinite(precision)) {
     circuloUbicacionContrato = L.circle(coordenadas, {
-      radius: Number(precision),
+      radius: precision,
       weight: 1,
       fillOpacity: 0.12,
     }).addTo(mapaUbicacionContrato);
   }
 
   setTimeout(() => {
-    mapaUbicacionContrato.invalidateSize();
+    if (
+      mapaUbicacionContrato &&
+      typeof mapaUbicacionContrato.invalidateSize === "function"
+    ) {
+      mapaUbicacionContrato.invalidateSize();
+    }
   }, 250);
 }
+
+function mostrarMapaUbicacionEdit(lat, lng, precision = null) {
+  if (typeof L === "undefined") {
+    Swal.fire({
+      ...swalDark,
+      title: "Mapa no disponible",
+      text: "No se pudo cargar Leaflet.",
+      icon: "error",
+    });
+    return;
+  }
+
+  lat = Number(lat);
+  lng = Number(lng);
+  precision = precision ? Number(precision) : null;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    Swal.fire({
+      ...swalDark,
+      title: "Sin ubicación",
+      text: "Primero captura una ubicación para poder verla en el mapa.",
+      icon: "warning",
+    });
+    return;
+  }
+  ubicacionPendienteLat = null;
+  ubicacionPendienteLng = null;
+  ubicacionPendientePrecision = null;
+  ubicacionPinMovido = false;
+  const contenedorMapa = document.getElementById("contenedorMapaUbicacionEdit");
+  const ayudaMapa = document.getElementById("ayudaMapaUbicacionEdit");
+
+  if (contenedorMapa) {
+    contenedorMapa.classList.remove("hidden");
+  }
+
+  if (ayudaMapa) {
+    ayudaMapa.classList.remove("hidden");
+  }
+
+  const coordenadas = [lat, lng];
+
+  setTimeout(() => {
+    const mapaEl = document.getElementById("mapaUbicacionEdit");
+    if (!mapaEl) return;
+
+    if (!mapaUbicacionEdit) {
+      mapaUbicacionEdit = L.map("mapaUbicacionEdit", {
+        maxZoom: 19,
+      }).setView(coordenadas, 18);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      maxNativeZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+      }).addTo(mapaUbicacionEdit);
+
+      marcadorUbicacionEdit = L.marker(coordenadas, {
+        draggable: true,
+      }).addTo(mapaUbicacionEdit);
+
+      marcadorUbicacionEdit
+        .bindPopup("Mueve este pin para ajustar la ubicación.")
+        .openPopup();
+
+      marcadorUbicacionEdit.on("dragend", function () {
+        const nuevaPosicion = marcadorUbicacionEdit.getLatLng();
+
+        ubicacionPendienteLat = nuevaPosicion.lat;
+        ubicacionPendienteLng = nuevaPosicion.lng;
+        ubicacionPendientePrecision = null;
+        ubicacionPinMovido = true;
+
+        if (circuloUbicacionEdit) {
+          mapaUbicacionEdit.removeLayer(circuloUbicacionEdit);
+          circuloUbicacionEdit = null;
+        }
+
+        const textoUbicacion = document.getElementById("textoUbicacionEdit");
+
+        if (textoUbicacion) {
+          textoUbicacion.innerHTML = `
+      <span class="text-amber-300 font-semibold">Ubicación pendiente de confirmar</span><br>
+      <span class="text-white/60 text-xs">
+        Pin ajustado a: Lat: ${nuevaPosicion.lat.toFixed(8)} | Lng: ${nuevaPosicion.lng.toFixed(8)}
+      </span><br>
+      <span class="text-white/40 text-xs">
+        Esta coordenada todavía no se guardará. Se aplicará hasta presionar Actualizar datos.
+      </span>
+    `;
+        }
+      });
+    } else {
+      mapaUbicacionEdit.setView(coordenadas, 18);
+
+      if (marcadorUbicacionEdit) {
+        marcadorUbicacionEdit.setLatLng(coordenadas);
+      }
+    }
+
+    if (circuloUbicacionEdit) {
+      mapaUbicacionEdit.removeLayer(circuloUbicacionEdit);
+      circuloUbicacionEdit = null;
+    }
+
+    if (precision && Number.isFinite(precision)) {
+      circuloUbicacionEdit = L.circle(coordenadas, {
+        radius: precision,
+        weight: 1,
+        fillOpacity: 0.12,
+      }).addTo(mapaUbicacionEdit);
+    }
+
+    setTimeout(() => {
+      mapaUbicacionEdit.invalidateSize();
+    }, 250);
+  }, 250);
+}
+
+function actualizarTextoUbicacionEdicion(
+  lat,
+  lng,
+  precision = null,
+  pintarMapa = true,
+) {
+  const latInput = document.getElementById("ubicacion_lat");
+  const lngInput = document.getElementById("ubicacion_lng");
+  const precisionInput = document.getElementById("ubicacion_precision");
+  const fuenteInput = document.getElementById("ubicacion_fuente");
+  const textoUbicacion = document.getElementById("textoUbicacionEdit");
+  const btnGoogleMaps = document.getElementById("btnGoogleMapsEdit");
+  const btnMostrarMapa = document.getElementById("btnMostrarMapaUbicacionEdit");
+  const contenedorMapa = document.getElementById("contenedorMapaUbicacionEdit");
+  const ayudaMapa = document.getElementById("ayudaMapaUbicacionEdit");
+
+  lat = Number(lat);
+  lng = Number(lng);
+  precision = precision ? Number(precision) : null;
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+  if (latInput) latInput.value = lat;
+  if (lngInput) lngInput.value = lng;
+  if (precisionInput) precisionInput.value = precision || "";
+  if (fuenteInput) fuenteInput.value = "edicion_contrato";
+
+  ubicacionEditLat = lat;
+  ubicacionEditLng = lng;
+  ubicacionEditPrecision = precision;
+
+  if (textoUbicacion) {
+    textoUbicacion.innerHTML = `
+      <span class="text-emerald-300 font-semibold">Ubicación capturada</span><br>
+      <span class="text-white/60 text-xs">
+        Lat: ${lat.toFixed(8)} | Lng: ${lng.toFixed(8)}
+        ${precision ? ` | Precisión: ${Math.round(precision)} m` : ""}
+      </span><br>
+      <span class="text-white/40 text-xs">
+        Puedes mover el pin en el mapa para hacerla más precisa.
+      </span>
+    `;
+  }
+
+  if (btnGoogleMaps) {
+    btnGoogleMaps.href = `https://www.google.com/maps?q=${lat},${lng}`;
+    btnGoogleMaps.classList.remove("hidden");
+  }
+
+  if (btnMostrarMapa) {
+    btnMostrarMapa.classList.remove("hidden");
+  }
+
+  if (contenedorMapa) {
+    contenedorMapa.classList.remove("hidden");
+  }
+
+  if (ayudaMapa) {
+    ayudaMapa.classList.remove("hidden");
+  }
+
+  if (pintarMapa) {
+    mostrarMapaUbicacionEdit(lat, lng, precision);
+  }
+}
+function aplicarUbicacionFinalDelPin() {
+  const latInput = document.getElementById("ubicacion_lat");
+  const lngInput = document.getElementById("ubicacion_lng");
+  const precisionInput = document.getElementById("ubicacion_precision");
+  const fuenteInput = document.getElementById("ubicacion_fuente");
+
+  // Si existe marcador editable y el pin fue movido,
+  // tomamos la posición final directamente del marcador.
+  if (
+    ubicacionPinMovido &&
+    marcadorUbicacionEdit &&
+    typeof marcadorUbicacionEdit.getLatLng === "function"
+  ) {
+    const posicionFinal = marcadorUbicacionEdit.getLatLng();
+
+    if (
+      Number.isFinite(Number(posicionFinal.lat)) &&
+      Number.isFinite(Number(posicionFinal.lng))
+    ) {
+      if (latInput) latInput.value = posicionFinal.lat;
+      if (lngInput) lngInput.value = posicionFinal.lng;
+      if (precisionInput) precisionInput.value = "";
+      if (fuenteInput) fuenteInput.value = "pin_manual";
+
+      ubicacionEditLat = posicionFinal.lat;
+      ubicacionEditLng = posicionFinal.lng;
+      ubicacionEditPrecision = null;
+
+      ubicacionPendienteLat = posicionFinal.lat;
+      ubicacionPendienteLng = posicionFinal.lng;
+      ubicacionPendientePrecision = null;
+
+      return {
+        lat: posicionFinal.lat,
+        lng: posicionFinal.lng,
+        precision: "",
+        fuente: "pin_manual",
+      };
+    }
+  }
+
+  return {
+    lat: latInput?.value || "",
+    lng: lngInput?.value || "",
+    precision: precisionInput?.value || "",
+    fuente: fuenteInput?.value || "",
+  };
+}
+function obtenerUbicacionParaContrato() {
+  if (!navigator.geolocation) {
+    Swal.fire({
+      ...swalDark,
+      title: "Ubicación no disponible",
+      text: "Este navegador no permite obtener la ubicación.",
+      icon: "error",
+    });
+    return;
+  }
+
+  Swal.fire({
+    ...swalDark,
+    title: "Obteniendo ubicación",
+    text: "Acepta el permiso de ubicación en el navegador.",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const precision = position.coords.accuracy;
+
+      actualizarTextoUbicacionEdicion(lat, lng, precision);
+
+      Swal.fire({
+        ...swalDark,
+        title: "Ubicación capturada",
+        text: "La ubicación se guardará cuando actualices el contrato.",
+        icon: "success",
+      });
+    },
+    (error) => {
+      let mensaje = "No se pudo obtener la ubicación.";
+
+      if (error.code === error.PERMISSION_DENIED) {
+        mensaje = "El permiso de ubicación fue rechazado.";
+      } else if (error.code === error.POSITION_UNAVAILABLE) {
+        mensaje = "La ubicación no está disponible en este momento.";
+      } else if (error.code === error.TIMEOUT) {
+        mensaje = "Se agotó el tiempo para obtener la ubicación.";
+      }
+
+      Swal.fire({
+        ...swalDark,
+        title: "Error de ubicación",
+        text: mensaje,
+        icon: "error",
+      });
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0,
+    },
+  );
+}
+
 async function cargarTabla() {
   const estado = filtroEstadoEl?.value || "activo";
   const busqueda = busquedaEl?.value?.trim() || "";
@@ -683,64 +1029,64 @@ async function imprimirContratoFibra(datosFormulario, opciones = {}) {
     writePdf(pdf, d.envioElectronico.otro, m.p2.otroMedioElectronico);
     writePdf(pdf, d.envioElectronico.numero, m.p2.numeroOtroMedio);
 
-   markPdf(pdf, String(d.usoInformacion.cfactura) === "1", 118, 538.5);
-markPdf(pdf, String(d.usoInformacion.cfactura) !== "1", 156, 538.5);
+    markPdf(pdf, String(d.usoInformacion.cfactura) === "1", 118, 538.5);
+    markPdf(pdf, String(d.usoInformacion.cfactura) !== "1", 156, 538.5);
 
-markPdf(pdf, String(d.usoInformacion.cderechos) === "1", 325, 538.5);
-markPdf(pdf, String(d.usoInformacion.cderechos) !== "1", 361, 538.5);
+    markPdf(pdf, String(d.usoInformacion.cderechos) === "1", 325, 538.5);
+    markPdf(pdf, String(d.usoInformacion.cderechos) !== "1", 361, 538.5);
 
-markPdf(pdf, String(d.usoInformacion.ccontrato) === "1", 484, 538.5);
-markPdf(pdf, String(d.usoInformacion.ccontrato) !== "1", 518.5, 538.5);
+    markPdf(pdf, String(d.usoInformacion.ccontrato) === "1", 484, 538.5);
+    markPdf(pdf, String(d.usoInformacion.ccontrato) !== "1", 518.5, 538.5);
 
-// Medio electrónico autorizado
-markPdf(pdf, !!d.envioElectronico.correo, 101.5, 571.5);
-markPdf(pdf, !!d.envioElectronico.otro, 101.5, 592);
+    // Medio electrónico autorizado
+    markPdf(pdf, !!d.envioElectronico.correo, 101.5, 571.5);
+    markPdf(pdf, !!d.envioElectronico.otro, 101.5, 592);
 
-// Autorización para uso de información
-markPdf(pdf, String(d.usoInformacion.cederInformacion) === "1", 128, 641);
-markPdf(pdf, String(d.usoInformacion.cederInformacion) !== "1", 168, 641);
+    // Autorización para uso de información
+    markPdf(pdf, String(d.usoInformacion.cederInformacion) === "1", 128, 641);
+    markPdf(pdf, String(d.usoInformacion.cederInformacion) !== "1", 168, 641);
 
-markPdf(pdf, String(d.usoInformacion.recibirLlamadas) === "1", 168, 675);
-markPdf(pdf, String(d.usoInformacion.recibirLlamadas) !== "1", 212, 675);
+    markPdf(pdf, String(d.usoInformacion.recibirLlamadas) === "1", 168, 675);
+    markPdf(pdf, String(d.usoInformacion.recibirLlamadas) !== "1", 212, 675);
 
-// Firma principal de página 2: aquí va CLIENTE, no proveedor
-if (d.firmaCliente) {
-  pdf.addImage(
-    d.firmaCliente,
-    "PNG",
-    m.p2.firmaProveedor.x,
-    m.p2.firmaProveedor.y,
-    m.p2.firmaProveedor.w,
-    m.p2.firmaProveedor.h
-  );
+    // Firma principal de página 2: aquí va CLIENTE, no proveedor
+    if (d.firmaCliente) {
+      pdf.addImage(
+        d.firmaCliente,
+        "PNG",
+        m.p2.firmaProveedor.x,
+        m.p2.firmaProveedor.y,
+        m.p2.firmaProveedor.w,
+        m.p2.firmaProveedor.h,
+      );
 
-  pdf.addImage(
-    d.firmaCliente,
-    "PNG",
-    m.p2.firmaProvedor2.x,
-    m.p2.firmaProvedor2.y,
-    m.p2.firmaProvedor2.w,
-    m.p2.firmaProvedor2.h
-  );
+      pdf.addImage(
+        d.firmaCliente,
+        "PNG",
+        m.p2.firmaProvedor2.x,
+        m.p2.firmaProvedor2.y,
+        m.p2.firmaProvedor2.w,
+        m.p2.firmaProvedor2.h,
+      );
 
-  pdf.addImage(
-    d.firmaCliente,
-    "PNG",
-    m.p2.firmaProvedor3.x,
-    m.p2.firmaProvedor3.y,
-    m.p2.firmaProvedor3.w,
-    m.p2.firmaProvedor3.h
-  );
+      pdf.addImage(
+        d.firmaCliente,
+        "PNG",
+        m.p2.firmaProvedor3.x,
+        m.p2.firmaProvedor3.y,
+        m.p2.firmaProvedor3.w,
+        m.p2.firmaProvedor3.h,
+      );
 
-  pdf.addImage(
-    d.firmaCliente,
-    "PNG",
-    m.p2.firmaProvedor4.x,
-    m.p2.firmaProvedor4.y,
-    m.p2.firmaProvedor4.w,
-    m.p2.firmaProvedor4.h
-  );
-}
+      pdf.addImage(
+        d.firmaCliente,
+        "PNG",
+        m.p2.firmaProvedor4.x,
+        m.p2.firmaProvedor4.y,
+        m.p2.firmaProvedor4.w,
+        m.p2.firmaProvedor4.h,
+      );
+    }
 
     pdf.addPage();
     addPageImage(image3);
@@ -906,11 +1252,15 @@ async function enviarContratoPorCorreo(id, emailCliente) {
   const raw = await response.json();
 
   if (!response.ok || raw.error || raw.status === "error") {
-    throw new Error(raw.message || "No se pudo obtener el contrato para enviar.");
+    throw new Error(
+      raw.message || "No se pudo obtener el contrato para enviar.",
+    );
   }
 
   const datosFibra = convertirContratoDBaFibra(raw);
-  const contratoBlob = await imprimirContratoFibra(datosFibra, { returnBlob: true });
+  const contratoBlob = await imprimirContratoFibra(datosFibra, {
+    returnBlob: true,
+  });
 
   const formData = new FormData();
   formData.append("idcontrato", id);
@@ -1055,7 +1405,7 @@ async function addUsuario(id) {
       `../php/insertCliete.php?${params.toString()}`,
       {
         method: "GET",
-      }
+      },
     );
 
     const text = (await response.text()).trim();
@@ -1117,7 +1467,23 @@ async function editContract(id) {
 
     const html = await response.text();
     modalBodyEditarEl.innerHTML = html;
+
+    const latGuardada = document.getElementById("ubicacion_lat")?.value || "";
+    const lngGuardada = document.getElementById("ubicacion_lng")?.value || "";
+    const precisionGuardada =
+      document.getElementById("ubicacion_precision")?.value || "";
+
     modalEditar?.show();
+
+    if (latGuardada && lngGuardada) {
+      setTimeout(() => {
+        mostrarMapaUbicacionEdit(
+          Number(latGuardada),
+          Number(lngGuardada),
+          precisionGuardada ? Number(precisionGuardada) : null,
+        );
+      }, 400);
+    }
   } catch (error) {
     console.error(error);
     if (respuestaEl) {
@@ -1138,8 +1504,7 @@ async function updateContrato() {
   let estado = document.getElementById("estado").value;
   let rfc = document.getElementById("rfc").value;
   let telefono = document.getElementById("telefono").value;
-  let ttipo =
-    document.querySelector('input[name="ttipo"]:checked')?.value || "";
+  let ttipo =  document.querySelector('input[name="ttipo"]:checked')?.value || "";
   let tarifa = document.getElementById("tarifa").value;
   let total = document.getElementById("totalm").value;
   let plazo = document.getElementById("pmeses").value;
@@ -1151,8 +1516,8 @@ async function updateContrato() {
 
   let modemt = document.getElementById("modemt").value;
 
-// Usamos el mismo valor de "Modem entregado" para guardar también tipo_entrega_equipo
-let tipoEntregaEquipo = modemt;
+  // Usamos el mismo valor de "Modem entregado" para guardar también tipo_entrega_equipo
+  let tipoEntregaEquipo = modemt;
   let marca = document.getElementById("marca").value;
   let modelo = document.getElementById("modelo").value;
   let serie = document.getElementById("serie").value;
@@ -1302,6 +1667,14 @@ let tipoEntregaEquipo = modemt;
   formData.append("ex", scontrato ? "1" : "0");
   formData.append("equipos_devueltos", equiposDev);
   formData.append("fecha_cancelacion", fechaCancel);
+  const ubicacionFinal = aplicarUbicacionFinalDelPin();
+
+formData.append("ubicacion_lat", ubicacionFinal.lat);
+formData.append("ubicacion_lng", ubicacionFinal.lng);
+formData.append("ubicacion_precision", ubicacionFinal.precision);
+formData.append("ubicacion_fuente", ubicacionFinal.fuente);
+
+console.log("Ubicación enviada al backend:", ubicacionFinal);
 
   try {
     const response = await fetch("../php/updateContrato.php", {
@@ -1387,17 +1760,78 @@ document.addEventListener("change", (e) => {
 document.addEventListener("click", (e) => {
   const btnUbicacion = e.target.closest(".btn-ver-ubicacion-contrato");
 
-  if (!btnUbicacion) return;
+  if (btnUbicacion) {
+    abrirUbicacionContrato({
+      id: btnUbicacion.dataset.id,
+      nombre: btnUbicacion.dataset.nombre,
+      lat: btnUbicacion.dataset.lat,
+      lng: btnUbicacion.dataset.lng,
+      precision: btnUbicacion.dataset.precision,
+    });
 
-  abrirUbicacionContrato({
-    id: btnUbicacion.dataset.id,
-    nombre: btnUbicacion.dataset.nombre,
-    lat: btnUbicacion.dataset.lat,
-    lng: btnUbicacion.dataset.lng,
-    precision: btnUbicacion.dataset.precision,
-  });
+    return;
+  }
+
+  const btnCapturarUbicacion = e.target.closest("#btnCapturarUbicacionEdit");
+
+  if (btnCapturarUbicacion) {
+    obtenerUbicacionParaContrato();
+    return;
+  }
+
+  const btnMostrarMapaEdit = e.target.closest("#btnMostrarMapaUbicacionEdit");
+
+  if (btnMostrarMapaEdit) {
+    const lat = document.getElementById("ubicacion_lat")?.value || "";
+    const lng = document.getElementById("ubicacion_lng")?.value || "";
+    const precision =
+      document.getElementById("ubicacion_precision")?.value || "";
+
+    mostrarMapaUbicacionEdit(
+      Number(lat),
+      Number(lng),
+      precision ? Number(precision) : null,
+    );
+
+    return;
+  }
 });
-/* Buscador */
+modalEditarEl?.addEventListener("hidden.bs.modal", () => {
+  if (mapaUbicacionEdit) {
+    mapaUbicacionEdit.remove();
+    mapaUbicacionEdit = null;
+    marcadorUbicacionEdit = null;
+    circuloUbicacionEdit = null;
+  }
+
+  ubicacionEditLat = null;
+  ubicacionEditLng = null;
+  ubicacionEditPrecision = null;
+
+  ubicacionPendienteLat = null;
+  ubicacionPendienteLng = null;
+  ubicacionPendientePrecision = null;
+  ubicacionPinMovido = false;
+});
+modalUbicacionContratoEl?.addEventListener("hidden.bs.modal", () => {
+  if (
+    mapaUbicacionContrato &&
+    typeof mapaUbicacionContrato.remove === "function"
+  ) {
+    mapaUbicacionContrato.remove();
+  }
+
+  mapaUbicacionContrato = null;
+  marcadorUbicacionContrato = null;
+  circuloUbicacionContrato = null;
+
+  const contenedorMapa = document.getElementById("mapaUbicacionContrato");
+
+  if (contenedorMapa) {
+    contenedorMapa.innerHTML = "";
+  }
+});
+
 btnBuscarEl?.addEventListener("click", cargarTabla);
 
 busquedaEl?.addEventListener("keydown", (e) => {

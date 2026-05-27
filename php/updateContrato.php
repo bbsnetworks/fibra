@@ -158,6 +158,45 @@ $mes_firma  = esc($conexion, 'mes_firma');
 $anio_firma = esc($conexion, 'anio_firma');
 
 /* =========================
+   Ubicación
+========================= */
+$ubicacion_lat_raw = trim((string)($_POST['ubicacion_lat'] ?? ''));
+$ubicacion_lng_raw = trim((string)($_POST['ubicacion_lng'] ?? ''));
+$ubicacion_precision_raw = trim((string)($_POST['ubicacion_precision'] ?? ''));
+$ubicacion_fuente = esc($conexion, 'ubicacion_fuente');
+
+$ubicacion_lat_sql = "ubicacion_lat";
+$ubicacion_lng_sql = "ubicacion_lng";
+$ubicacion_precision_sql = "ubicacion_precision";
+$ubicacion_fuente_sql = "ubicacion_fuente";
+$ubicacion_fecha_sql = "ubicacion_fecha";
+
+if (
+    $ubicacion_lat_raw !== '' &&
+    $ubicacion_lng_raw !== '' &&
+    is_numeric($ubicacion_lat_raw) &&
+    is_numeric($ubicacion_lng_raw)
+) {
+    $ubicacion_lat = (float)$ubicacion_lat_raw;
+    $ubicacion_lng = (float)$ubicacion_lng_raw;
+
+    if ($ubicacion_precision_raw !== '' && is_numeric($ubicacion_precision_raw)) {
+        $ubicacion_precision_sql = (float)$ubicacion_precision_raw;
+    } else {
+        $ubicacion_precision_sql = "NULL";
+    }
+
+    if ($ubicacion_fuente === '') {
+        $ubicacion_fuente = 'edicion_contrato';
+    }
+
+    $ubicacion_lat_sql = $ubicacion_lat;
+    $ubicacion_lng_sql = $ubicacion_lng;
+    $ubicacion_fuente_sql = "'" . $ubicacion_fuente . "'";
+    $ubicacion_fecha_sql = "NOW()";
+}
+
+/* =========================
    Cancelación
 ========================= */
 $equipos_devueltos = esc($conexion, 'equipos_devueltos');
@@ -265,7 +304,12 @@ UPDATE contratos SET
     anio_firma = '$anio_firma',
 
     equipos_devueltos = '$equipos_devueltos',
-    fecha_cancelacion = $fecha_cancelacion_sql
+    fecha_cancelacion = $fecha_cancelacion_sql,
+    ubicacion_lat = $ubicacion_lat_sql,
+    ubicacion_lng = $ubicacion_lng_sql,
+    ubicacion_precision = $ubicacion_precision_sql,
+    ubicacion_fuente = $ubicacion_fuente_sql,
+    ubicacion_fecha = $ubicacion_fecha_sql
 
 WHERE idcontrato = $idcontrato
 ";

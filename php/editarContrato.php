@@ -23,6 +23,16 @@ if (!empty($row['fecha_cancelacion'])) {
 }
 
 $equiposDevueltosVal = htmlspecialchars($row['equipos_devueltos'] ?? '', ENT_QUOTES, 'UTF-8');
+$ubicacionLat = $row['ubicacion_lat'] ?? '';
+$ubicacionLng = $row['ubicacion_lng'] ?? '';
+$ubicacionPrecision = $row['ubicacion_precision'] ?? '';
+$ubicacionFuente = $row['ubicacion_fuente'] ?? '';
+$ubicacionFecha = $row['ubicacion_fecha'] ?? '';
+
+$tieneUbicacion = $ubicacionLat !== '' 
+  && $ubicacionLat !== null 
+  && $ubicacionLng !== '' 
+  && $ubicacionLng !== null;
 
 function h($v)
 {
@@ -350,7 +360,92 @@ if (!is_array($metodosPago)) {
       días hábiles a partir de la firma del contrato.
     </div>
   </section>
+  <!-- Ubicación del cliente -->
+<section class="rounded-3xl border border-white/10 bg-[#0b1a2d] p-6 shadow-xl">
+  <input type="hidden" id="ubicacion_lat" name="ubicacion_lat" value="<?= h($ubicacionLat) ?>">
+  <input type="hidden" id="ubicacion_lng" name="ubicacion_lng" value="<?= h($ubicacionLng) ?>">
+  <input type="hidden" id="ubicacion_precision" name="ubicacion_precision" value="<?= h($ubicacionPrecision) ?>">
+  <input type="hidden" id="ubicacion_fuente" name="ubicacion_fuente" value="<?= h($ubicacionFuente ?: 'edicion_contrato') ?>">
 
+  <div class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h3 class="text-lg font-semibold text-cyan-300">Ubicación del cliente</h3>
+      <p class="mt-1 text-sm text-white/60">
+        Esta ubicación puede ser capturada por el técnico durante una visita y se guardará en el contrato digital.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+  <button
+    type="button"
+    id="btnCapturarUbicacionEdit"
+    class="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-400">
+    <i class="bi bi-geo-alt-fill"></i>
+    Capturar ubicación
+  </button>
+
+  <button
+    type="button"
+    id="btnMostrarMapaUbicacionEdit"
+    class="<?= $tieneUbicacion ? '' : 'hidden' ?> inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/15">
+    <i class="bi bi-pin-map"></i>
+    Ajustar en mapa
+  </button>
+
+  <a
+    id="btnGoogleMapsEdit"
+    href="<?= $tieneUbicacion ? 'https://www.google.com/maps?q=' . h($ubicacionLat) . ',' . h($ubicacionLng) : '#' ?>"
+    target="_blank"
+    class="<?= $tieneUbicacion ? '' : 'hidden' ?> inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
+    <i class="bi bi-map"></i>
+    Ver en Maps
+  </a>
+</div>
+  </div>
+
+  <div class="mt-5 rounded-2xl border border-white/10 bg-[#071322] p-4">
+  <p id="textoUbicacionEdit" class="text-sm text-white/70">
+    <?php if ($tieneUbicacion): ?>
+      <span class="font-semibold text-emerald-300">Ubicación guardada</span><br>
+      <span class="text-xs text-white/60">
+        Lat: <?= h($ubicacionLat) ?> | Lng: <?= h($ubicacionLng) ?>
+        <?php if (!empty($ubicacionPrecision)): ?>
+          | Precisión: <?= h(round((float) $ubicacionPrecision)) ?> m
+        <?php endif; ?>
+      </span>
+
+      <?php if (!empty($ubicacionFuente)): ?>
+        <br>
+        <span class="text-xs text-white/40">
+          Fuente: <?= h($ubicacionFuente) ?>
+        </span>
+      <?php endif; ?>
+
+      <?php if (!empty($ubicacionFecha)): ?>
+        <br>
+        <span class="text-xs text-white/40">
+          Última actualización: <?= h($ubicacionFecha) ?>
+        </span>
+      <?php endif; ?>
+    <?php else: ?>
+      No hay ubicación guardada para este contrato.
+    <?php endif; ?>
+  </p>
+
+  <div id="contenedorMapaUbicacionEdit" class="<?= $tieneUbicacion ? '' : 'hidden' ?> mt-4 overflow-hidden rounded-2xl border border-white/10">
+    <div id="mapaUbicacionEdit" class="h-[320px] w-full bg-slate-900"></div>
+  </div>
+
+  <div id="ayudaMapaUbicacionEdit" class="<?= $tieneUbicacion ? '' : 'hidden' ?> mt-3 rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-3 text-xs text-cyan-100/80">
+    Puedes mover el pin en el mapa para ajustar la ubicación antes de guardar los cambios.
+  </div>
+</div>
+
+  <div class="mt-4 rounded-2xl border border-amber-400/15 bg-amber-400/5 p-4 text-sm text-amber-100/90">
+    La ubicación no se guarda automáticamente al capturarla. Primero se obtiene en pantalla y se guarda hasta presionar
+    <span class="font-semibold text-white">Actualizar datos</span>.
+  </div>
+</section>
   <!-- Método de pago -->
   <section class="rounded-3xl border border-white/10 bg-[#0b1a2d] p-6 shadow-xl">
     <div class="mb-5">

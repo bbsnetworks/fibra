@@ -843,7 +843,7 @@ function convertirContratoDBaFibra(raw) {
       anio: S(raw.anio_firma),
     },
 
-    firmaCliente: B64PNG(S(raw.firma1)),
+    firmaCliente: prepararFirmaBase64(raw.firma1),
   };
 }
 
@@ -1851,4 +1851,37 @@ document.addEventListener("DOMContentLoaded", () => {
 document
   .getElementById("btnConfirmarReenvio")
   ?.addEventListener("click", confirmarReenvioContrato);
-/* =================== fin lista.js =================== */
+
+function prepararFirmaBase64(valor) {
+  if (!valor) return "";
+
+  let firma = String(valor).trim();
+
+  if (
+    firma === "" ||
+    firma === "null" ||
+    firma === "undefined" ||
+    firma === "0"
+  ) {
+    return "";
+  }
+
+  // Si ya viene como dataURL válida
+  if (firma.startsWith("data:image/")) {
+    return firma;
+  }
+
+  // Si por error viene con espacios o saltos
+  firma = firma.replace(/\s/g, "");
+
+  // Validar que parezca base64
+  const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
+
+  if (!base64Regex.test(firma)) {
+    console.warn("Firma inválida, no se agregará al PDF:", firma.substring(0, 50));
+    return "";
+  }
+
+  return `data:image/png;base64,${firma}`;
+}
+

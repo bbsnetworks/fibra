@@ -13,6 +13,48 @@ if ($id <= 0) {
     exit;
 }
 
+/**
+ * Normaliza la firma para que SIEMPRE salga como:
+ * data:image/png;base64,xxxxx
+ * o data:image/jpeg;base64,xxxxx
+ */
+function normalizarFirma($firma) {
+    if (empty($firma)) {
+        return "";
+    }
+
+    // Asegurarnos de tratarlo como string
+    $firmaStr = (string)$firma;
+
+    // Caso 1: ya viene guardada como dataURL completa
+    // Ejemplo: data:image/png;base64,iVBORw0...
+    if (strpos($firmaStr, 'data:image') === 0) {
+        return $firmaStr;
+    }
+
+    // Detectar tipo real por firma binaria
+    $inicioHex = strtoupper(bin2hex(substr($firma, 0, 8)));
+
+    // PNG => 89 50 4E 47 0D 0A 1A 0A
+    if (strpos($inicioHex, '89504E47') === 0) {
+        return 'data:image/png;base64,' . base64_encode($firma);
+    }
+
+    // JPG/JPEG => FF D8 FF
+    if (strpos($inicioHex, 'FFD8FF') === 0) {
+        return 'data:image/jpeg;base64,' . base64_encode($firma);
+    }
+
+    // Si por alguna razón viene base64 limpio sin encabezado
+    if (preg_match('/^[A-Za-z0-9+\/=\r\n]+$/', $firmaStr)) {
+        $firmaLimpia = preg_replace('/\s+/', '', $firmaStr);
+        return 'data:image/png;base64,' . $firmaLimpia;
+    }
+
+    // Fallback: asumir PNG binario
+    return 'data:image/png;base64,' . base64_encode($firma);
+}
+
 $sql = "SELECT * FROM contratos WHERE idcontrato = ?";
 $stmt = $conexion->prepare($sql);
 
@@ -39,18 +81,11 @@ if ($result->num_rows === 0) {
 
 $data = $result->fetch_assoc();
 
-/* Convertir BLOBs a base64 para que JSON no falle */
-if (!empty($data['firma1'])) {
-    $data['firma1'] = base64_encode($data['firma1']);
-} else {
-    $data['firma1'] = "";
-}
+/* Normalizar firmas */
+$data['firma1'] = normalizarFirma($data['firma1'] ?? null);
 
-if (!empty($data['firma2'])) {
-    $data['firma2'] = base64_encode($data['firma2']);
-} else {
-    $data['firma2'] = "";
-}
+/* firma2 es opcional */
+$data['firma2'] = normalizarFirma($data['firma2'] ?? null);
 
 /* Evitar problemas con NULL */
 foreach ($data as $key => $value) {
@@ -62,7 +97,7 @@ foreach ($data as $key => $value) {
 $stmt->close();
 $conexion->close();
 
-$json = json_encode($data, JSON_UNESCAPED_UNICODE);
+$json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
 if ($json === false) {
     echo json_encode([

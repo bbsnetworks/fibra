@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/conexion.php';
-
+define('USUARIO_POS_CONTRATOS_ID', 20);
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $conexion->set_charset('utf8mb4');
 
@@ -611,19 +611,35 @@ try {
     $stmt->close();
 
     if (!empty($equiposInventario) && $conexionPos instanceof mysqli) {
-        $usuarioRegistraId = obtener_usuario_id_sesion();
+    $usuarioRegistraId = USUARIO_POS_CONTRATOS_ID;
 
-        $ventaEquipos = registrar_venta_equipos_contrato_pos(
-            $conexionPos,
-            $equiposInventario,
-            $idcontrato,
-            $nombreCompleto,
-            $usuarioRegistraId,
-            'Contrato'
-        );
+    // Validar que el usuario fijo exista en smartgatepos.usuarios
+    $stmtUserPos = $conexionPos->prepare("
+        SELECT id 
+        FROM usuarios 
+        WHERE id = ? 
+        LIMIT 1
+    ");
+    $stmtUserPos->bind_param('i', $usuarioRegistraId);
+    $stmtUserPos->execute();
+    $userPosExiste = $stmtUserPos->get_result()->fetch_assoc();
+    $stmtUserPos->close();
 
-        $conexionPos->commit();
+    if (!$userPosExiste) {
+        throw new Exception('El usuario POS para contratos no existe. Verifica el ID ' . $usuarioRegistraId);
     }
+
+    $ventaEquipos = registrar_venta_equipos_contrato_pos(
+        $conexionPos,
+        $equiposInventario,
+        $idcontrato,
+        $nombreCompleto,
+        $usuarioRegistraId,
+        'Contrato'
+    );
+
+    $conexionPos->commit();
+}
 
     $conexion->commit();
 

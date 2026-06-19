@@ -510,91 +510,164 @@ if (!isset($_SESSION['username'])) {
             <section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                 <div class="glass-card rounded-3xl p-5 md:p-6">
-                    <div class="section-title rounded-2xl px-4 py-3 mb-5">
-                        <h2 class="text-lg font-bold text-white">5. Equipo terminal</h2>
-                        <p class="text-sm text-slate-300">Datos del equipo entregado al suscriptor.</p>
-                    </div>
+    <div class="section-title rounded-2xl px-4 py-3 mb-5">
+        <h2 class="text-lg font-bold text-white">5. Equipo terminal</h2>
+        <p class="text-sm text-slate-300">Datos del equipo entregado al suscriptor.</p>
+    </div>
 
-                    <div class="space-y-4">
-                        <div data-radio-group="tipoEntregaEquipo">
-                            <label class="label-main">Equipo entregado en *</label>
-                            <div class="flex flex-wrap gap-6 mt-2">
-                                <label class="radio-line">
-                                    <input type="radio" name="tipoEntregaEquipo" value="1"
-                                        class="mini-check requerido-radio">
-                                    <span>Comodato</span>
-                                </label>
-                                <label class="radio-line">
-                                    <input type="radio" name="tipoEntregaEquipo" value="2"
-                                        class="mini-check requerido-radio">
-                                    <span>Compraventa</span>
-                                </label>
-                            </div>
-                        </div>
+    <div class="space-y-4">
+        <div data-radio-group="tipoEntregaEquipo">
+            <label class="label-main">Equipo entregado en *</label>
+            <div class="flex flex-wrap gap-6 mt-2">
+                <label class="radio-line">
+                    <input type="radio" name="tipoEntregaEquipo" value="1"
+                        class="mini-check requerido-radio">
+                    <span>Comodato</span>
+                </label>
+                <label class="radio-line">
+                    <input type="radio" name="tipoEntregaEquipo" value="2"
+                        class="mini-check requerido-radio">
+                    <span>Compraventa</span>
+                </label>
+            </div>
+        </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="label-main">Marca *</label>
-                                <input type="text" id="marcaEquipo" class="input-dark requerido" placeholder="Marca"
-                                    value="">
-                            </div>
+        <!-- BUSCADOR DE EQUIPO EN STOCK -->
+        <div class="rounded-2xl border border-cyan-400/20 bg-slate-950/30 p-4">
+            <label class="label-main">Buscar equipo en stock</label>
 
-                            <div>
-                                <label class="label-main">Modelo *</label>
-                                <input type="text" id="modeloEquipo" class="input-dark requerido" placeholder="Modelo"
-                                    value="">
-                            </div>
+            <div class="relative mt-2">
+                <input
+                    type="text"
+                    id="buscarEquipoStock"
+                    class="input-dark"
+                    placeholder="Buscar por marca, modelo, código o descripción"
+                    autocomplete="off"
+                >
 
-                            <div>
-                                <label class="label-main">Número de serie *</label>
-                                <input type="text" id="numeroSerie" class="input-dark requerido" placeholder="Serie"
-                                    value="">
-                            </div>
+                <div
+                    id="resultadosEquipoStock"
+                    class="hidden absolute left-0 right-0 z-40 mt-2 max-h-72 overflow-y-auto rounded-2xl border border-cyan-400/20 bg-slate-950 shadow-2xl"
+                ></div>
+            </div>
 
-                            <div>
-                                <label class="label-main">Número de equipos *</label>
-                                <input type="number" id="numeroEquipos" class="input-dark requerido"
-                                    placeholder="Cantidad" value="">
-                            </div>
-                        </div>
+            <p class="mt-2 text-xs text-slate-400">
+                Puedes seleccionar equipos del inventario o escribir manualmente si el equipo ya lo tiene el cliente.
+            </p>
 
-                        <div class="divider-glow my-2"></div>
+            <div id="equiposSeleccionadosBox" class="hidden mt-4 space-y-2">
+                <p class="text-xs font-bold uppercase tracking-wider text-cyan-200">
+                    Equipos seleccionados del stock
+                </p>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="label-main">Costo total</label>
-                                <input type="text" id="costoTotalEquipo" class="input-dark" placeholder="$0.00"
-                                    value="">
-                            </div>
+                <div id="equiposSeleccionadosLista" class="space-y-2"></div>
+            </div>
+        </div>
 
-                            <div data-radio-group="modalidadPagoEquipo">
-                                <label class="label-main">Modalidad de pago *</label>
-                                <div class="flex flex-wrap gap-6 mt-2">
-                                    <label class="radio-line">
-                                        <input type="radio" name="modalidadPagoEquipo" value="1"
-                                            class="mini-check requerido-radio">
-                                        <span>Pago único</span>
-                                    </label>
-                                    <label class="radio-line">
-                                        <input type="radio" name="modalidadPagoEquipo" value="2"
-                                            class="mini-check requerido-radio">
-                                        <span>Diferido</span>
-                                    </label>
-                                </div>
-                            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="label-main">Marca *</label>
+                <input type="text" id="marcaEquipo" class="input-dark requerido" placeholder="Marca" value="">
+            </div>
 
-                            <div>
-                                <label class="label-main">Costo diferido</label>
-                                <input type="text" id="costoDiferido" class="input-dark" placeholder="$0.00" value="0">
-                            </div>
+            <div>
+                <label class="label-main">Modelo *</label>
+                <input type="text" id="modeloEquipo" class="input-dark requerido" placeholder="Modelo" value="">
+            </div>
 
-                            <div>
-                                <label class="label-main">Meses diferido</label>
-                                <input type="number" id="mesesDiferido" class="input-dark" placeholder="Meses" value="">
-                            </div>
-                        </div>
-                    </div>
+            <div class="md:col-span-2">
+                <label class="label-main">Número de serie / MAC *</label>
+
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input
+                        type="text"
+                        id="numeroSerie"
+                        class="input-dark requerido flex-1"
+                        placeholder="Serie / MAC"
+                        value=""
+                    >
+
+                    <button
+                        type="button"
+                        id="btnEscanearMac"
+                        class="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-3 text-sm font-bold text-cyan-100 hover:bg-cyan-500/20 transition"
+                    >
+                        Escanear
+                    </button>
                 </div>
+
+                <div id="macsSeleccionadasBox" class="hidden mt-3">
+                    <p class="mb-2 text-xs font-bold uppercase tracking-wider text-cyan-200">
+                        MAC / series agregadas
+                    </p>
+
+                    <div id="macsSeleccionadasLista" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <div
+                    id="scannerMacBox"
+                    class="hidden mt-4 rounded-2xl border border-cyan-400/20 bg-slate-950/60 p-3"
+                >
+                    <div class="mb-3 flex items-center justify-between gap-3">
+                        <p class="text-sm font-bold text-white">Escanear código</p>
+
+                        <button
+                            type="button"
+                            id="btnCerrarScannerMac"
+                            class="rounded-xl bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-500/20 transition"
+                        >
+                            Cerrar
+                        </button>
+                    </div>
+
+                    <div id="readerMac" class="overflow-hidden rounded-xl"></div>
+                </div>
+            </div>
+
+            <div>
+                <label class="label-main">Número de equipos *</label>
+                <input type="number" id="numeroEquipos" class="input-dark requerido"
+                    placeholder="Cantidad" value="">
+            </div>
+        </div>
+
+        <div class="divider-glow my-2"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="label-main">Costo total</label>
+                <input type="text" id="costoTotalEquipo" class="input-dark" placeholder="$0.00"
+                    value="">
+            </div>
+
+            <div data-radio-group="modalidadPagoEquipo">
+                <label class="label-main">Modalidad de pago *</label>
+                <div class="flex flex-wrap gap-6 mt-2">
+                    <label class="radio-line">
+                        <input type="radio" name="modalidadPagoEquipo" value="1"
+                            class="mini-check requerido-radio">
+                        <span>Pago único</span>
+                    </label>
+                    <label class="radio-line">
+                        <input type="radio" name="modalidadPagoEquipo" value="2"
+                            class="mini-check requerido-radio">
+                        <span>Diferido</span>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="label-main">Costo diferido</label>
+                <input type="text" id="costoDiferido" class="input-dark" placeholder="$0.00" value="0">
+            </div>
+
+            <div>
+                <label class="label-main">Meses diferido</label>
+                <input type="number" id="mesesDiferido" class="input-dark" placeholder="Meses" value="">
+            </div>
+        </div>
+    </div>
+</div>
 
                 <div class="glass-card rounded-3xl p-5 md:p-6">
                     <div class="section-title rounded-2xl px-4 py-3 mb-5">
@@ -1122,6 +1195,7 @@ if (!isset($_SESSION['username'])) {
     <!-- <script src="../js/fibra_preview.js"></script> -->
     <script src="../js/swaldark.js"></script>
     <script src="../js/sidebar.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
 

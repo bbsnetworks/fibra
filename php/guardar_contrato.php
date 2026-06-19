@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/conexion.php';
 
@@ -97,7 +101,270 @@ function build_metodos_pago(): array
 
     return [$mpago, $metodosPago];
 }
+function post_json_array(string $key): array
+{
+    $raw = $_POST[$key] ?? '';
 
+    if ($raw === '') {
+        return [];
+    }
+
+    $data = json_decode($raw, true);
+
+    return is_array($data) ? $data : [];
+}
+
+function obtener_usuario_id_sesion(): int
+{
+    if (isset($_SESSION['usuario']['id'])) {
+        return (int) $_SESSION['usuario']['id'];
+    }
+
+    if (isset($_SESSION['iduser'])) {
+        return (int) $_SESSION['iduser'];
+    }
+
+    if (isset($_SESSION['idusuario'])) {
+        return (int) $_SESSION['idusuario'];
+    }
+
+    return 0;
+}
+
+function normalizar_equipos_inventario(array $equipos): array
+{
+    $agrupados = [];
+
+    foreach ($equipos as $item) {
+        $inventarioUsuarioId = (int)($item['inventario_usuario_id'] ?? 0);
+        $cantidad = (int)($item['cantidad'] ?? 1);
+
+        if ($inventarioUsuarioId <= 0) {
+            continue;
+        }
+
+        if ($cantidad <= 0) {
+            $cantidad = 1;
+        }
+
+        if (!isset($agrupados[$inventarioUsuarioId])) {
+            $agrupados[$inventarioUsuarioId] = [
+                'inventario_usuario_id' => $inventarioUsuarioId,
+                'cantidad' => 0
+            ];
+        }
+
+        $agrupados[$inventarioUsuarioId]['cantidad'] += $cantidad;
+    }
+
+    return array_values($agrupados);
+}
+
+function generar_venta_id_contrato(mysqli $conexionPos): string
+{
+    do {
+        $ventaId = 'CTR-' . date('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(4)));
+
+        $stmt = $conexionPos->prepare("SELECT COUNT(*) AS total FROM pagos_productos WHERE venta_id = ?");
+        $stmt->bind_param('s', $ventaId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        $existe = (int)($row['total'] ?? 0) > 0;
+    } while ($existe);
+
+    return $ventaId;
+}
+
+function sincronizar_stock_producto_pos(mysqli $conexionPos, int $productoId): void
+{
+    $stmt = $conexionPos->prepare("
+        SELECT COALESCE(SUM(stock), 0) AS stock_total
+        FROM inventario_usuarios
+        WHERE producto_id = ?
+          AND activo = 1
+    ");
+    $stmt->bind_param('i', $productoId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    $stockTotal = (int)($row['stock_total'] ?? 0);
+
+    $stmt = $conexionPos->prepare("
+        UPDATE productos
+        SET stock = ?
+        WHERE id = ?
+    ");
+    $stmt->bind_param('ii', $stockTotal, $productoId);
+    $stmt->execute();
+    $stmt->close();
+}
+
+function registrar_venta_equipos_contrato_pos(
+    mysqli $conexionPos,
+    array $equipos,
+    int $idcontrato,
+    string $cliente,
+    int $usuarioRegistraId,
+    string $metodoPago = 'Contrato'
+): array {
+    $equipos = normalizar_equipos_inventario($equipos);
+
+    if (empty($equipos)) {
+        return [
+            'venta_id' => null,
+            'productos' => []
+        ];
+    }
+
+    $ventaId = generar_venta_id_contrato($conexionPos);
+    $observaciones = "Equipo usado en contrato #{$idcontrato} / Cliente: {$cliente}";
+    $productosInsertados = [];
+
+    foreach ($equipos as $equipo) {
+        $inventarioUsuarioId = (int)$equipo['inventario_usuario_id'];
+        $cantidad = (int)$equipo['cantidad'];
+
+        if ($cantidad <= 0) {
+            throw new Exception('La cantidad del equipo debe ser mayor a 0.');
+        }
+
+        $stmt = $conexionPos->prepare("
+            SELECT 
+                iu.id AS inventario_usuario_id,
+                iu.producto_id,
+                iu.usuario_id AS usuario_propietario_id,
+                iu.precio_proveedor,
+                iu.precio_venta,
+                iu.stock,
+                iu.activo,
+
+                p.codigo,
+                p.marca,
+                p.modelo,
+                p.descripcion,
+                p.precio AS precio_producto,
+                p.precio_proveedor AS costo_producto
+            FROM inventario_usuarios iu
+            INNER JOIN productos p ON p.id = iu.producto_id
+            WHERE iu.id = ?
+            LIMIT 1
+            FOR UPDATE
+        ");
+        $stmt->bind_param('i', $inventarioUsuarioId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$row) {
+            throw new Exception("No se encontró el inventario seleccionado ID {$inventarioUsuarioId}.");
+        }
+
+        if ((int)$row['activo'] !== 1) {
+            throw new Exception("El inventario seleccionado no está activo.");
+        }
+
+        $stockActual = (int)$row['stock'];
+
+        $nombreEquipo = trim(($row['marca'] ?? '') . ' ' . ($row['modelo'] ?? ''));
+        if ($nombreEquipo === '') {
+            $nombreEquipo = $row['descripcion'] ?? 'Producto';
+        }
+
+        if ($stockActual < $cantidad) {
+            throw new Exception("Stock insuficiente para {$nombreEquipo}. Disponible: {$stockActual}, solicitado: {$cantidad}.");
+        }
+
+        $productoId = (int)$row['producto_id'];
+        $usuarioPropietarioId = (int)$row['usuario_propietario_id'];
+
+        $precioUnitario = (float)$row['precio_venta'];
+        if ($precioUnitario <= 0) {
+            $precioUnitario = (float)$row['precio_producto'];
+        }
+
+        $costoUnitario = (float)$row['precio_proveedor'];
+        if ($costoUnitario <= 0) {
+            $costoUnitario = (float)$row['costo_producto'];
+        }
+
+        $total = $precioUnitario * $cantidad;
+        $utilidadTotal = ($precioUnitario - $costoUnitario) * $cantidad;
+        $nuevoStock = $stockActual - $cantidad;
+
+        $stmt = $conexionPos->prepare("
+            UPDATE inventario_usuarios
+            SET stock = ?
+            WHERE id = ?
+        ");
+        $stmt->bind_param('ii', $nuevoStock, $inventarioUsuarioId);
+        $stmt->execute();
+        $stmt->close();
+
+        $stmt = $conexionPos->prepare("
+            INSERT INTO pagos_productos (
+                producto_id,
+                inventario_usuario_id,
+                cantidad,
+                precio_unitario,
+                costo_unitario,
+                total,
+                utilidad_total,
+                metodo_pago,
+                fecha_pago,
+                usuario_id,
+                usuario_propietario_id,
+                observaciones,
+                venta_id
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?
+            )
+        ");
+
+        $stmt->bind_param(
+            'iiiddddsiiss',
+            $productoId,
+            $inventarioUsuarioId,
+            $cantidad,
+            $precioUnitario,
+            $costoUnitario,
+            $total,
+            $utilidadTotal,
+            $metodoPago,
+            $usuarioRegistraId,
+            $usuarioPropietarioId,
+            $observaciones,
+            $ventaId
+        );
+
+        $stmt->execute();
+        $pagoProductoId = $stmt->insert_id;
+        $stmt->close();
+
+        sincronizar_stock_producto_pos($conexionPos, $productoId);
+
+        $productosInsertados[] = [
+            'pago_producto_id' => $pagoProductoId,
+            'producto_id' => $productoId,
+            'inventario_usuario_id' => $inventarioUsuarioId,
+            'cantidad' => $cantidad,
+            'precio_unitario' => $precioUnitario,
+            'costo_unitario' => $costoUnitario,
+            'total' => $total,
+            'utilidad_total' => $utilidadTotal,
+            'stock_restante' => $nuevoStock,
+            'marca' => $row['marca'] ?? '',
+            'modelo' => $row['modelo'] ?? ''
+        ];
+    }
+
+    return [
+        'venta_id' => $ventaId,
+        'productos' => $productosInsertados
+    ];
+}
 function bind_dynamic_params(mysqli_stmt $stmt, array &$params): void
 {
     $types = '';
@@ -119,8 +386,7 @@ function bind_dynamic_params(mysqli_stmt $stmt, array &$params): void
 
     call_user_func_array([$stmt, 'bind_param'], $bind);
 }
-function guardar_evidencias_contrato(int $idcontrato): ?string
-{
+function guardar_evidencias_contrato(int $idcontrato): ?string {
     if (
         !isset($_FILES['documentosContrato']) ||
         empty($_FILES['documentosContrato']['name'][0])
@@ -168,7 +434,8 @@ try {
     if ($idcontrato <= 0) {
         throw new Exception('Número de contrato inválido.');
     }
-
+    $equiposInventario = post_json_array('equiposInventario');
+    $equiposInventario = normalizar_equipos_inventario($equiposInventario);
     // Nombre completo
     $nombre = post_str('nombre');
     $apellidoPaterno = post_str('apellidoPaterno');
@@ -315,16 +582,73 @@ try {
     $placeholders = implode(', ', array_fill(0, count($columns), '?'));
     $sql = "INSERT INTO contratos (" . implode(', ', $columns) . ") VALUES ($placeholders)";
 
+    $ventaEquipos = [
+    'venta_id' => null,
+    'productos' => []
+];
+
+$conexionPos = null;
+
+try {
+    $conexion->begin_transaction();
+
+    if (!empty($equiposInventario)) {
+        require_once __DIR__ . '/conexion_smartgatepos.php';
+
+        if (!isset($conexion_pos) || !($conexion_pos instanceof mysqli)) {
+            throw new Exception('No se pudo conectar a la base smartgatepos.');
+        }
+
+        $conexionPos = $conexion_pos;
+        $conexionPos->set_charset('utf8mb4');
+        $conexionPos->begin_transaction();
+    }
+
     $stmt = $conexion->prepare($sql);
     $params = array_values($data);
     bind_dynamic_params($stmt, $params);
     $stmt->execute();
+    $stmt->close();
+
+    if (!empty($equiposInventario) && $conexionPos instanceof mysqli) {
+        $usuarioRegistraId = obtener_usuario_id_sesion();
+
+        $ventaEquipos = registrar_venta_equipos_contrato_pos(
+            $conexionPos,
+            $equiposInventario,
+            $idcontrato,
+            $nombreCompleto,
+            $usuarioRegistraId,
+            'Contrato'
+        );
+
+        $conexionPos->commit();
+    }
+
+    $conexion->commit();
 
     echo json_encode([
         'ok' => true,
         'message' => 'Contrato guardado correctamente.',
-        'idcontrato' => $idcontrato
-    ]);
+        'idcontrato' => $idcontrato,
+        'venta_equipos' => $ventaEquipos
+    ], JSON_UNESCAPED_UNICODE);
+
+} catch (Throwable $e) {
+    if ($conexionPos instanceof mysqli) {
+        try {
+            $conexionPos->rollback();
+        } catch (Throwable $rollbackPosError) {
+        }
+    }
+
+    try {
+        $conexion->rollback();
+    } catch (Throwable $rollbackContratoError) {
+    }
+
+    throw $e;
+}
 
 } catch (Throwable $e) {
     http_response_code(500);

@@ -1,3 +1,36 @@
+// =========================
+// EQUIPOS DE STOCK / CONTRATO
+// =========================
+const inputBuscarEquipoStock = document.getElementById("buscarEquipoStock");
+const resultadosEquipoStock = document.getElementById("resultadosEquipoStock");
+const equiposSeleccionadosBox = document.getElementById(
+  "equiposSeleccionadosBox",
+);
+const equiposSeleccionadosLista = document.getElementById(
+  "equiposSeleccionadosLista",
+);
+
+const inputMarcaEquipo = document.getElementById("marcaEquipo");
+const inputModeloEquipo = document.getElementById("modeloEquipo");
+const inputNumeroSerie = document.getElementById("numeroSerie");
+const inputNumeroEquipos = document.getElementById("numeroEquipos");
+const inputCostoTotalEquipo = document.getElementById("costoTotalEquipo");
+
+const btnEscanearMac = document.getElementById("btnEscanearMac");
+const btnCerrarScannerMac = document.getElementById("btnCerrarScannerMac");
+const scannerMacBox = document.getElementById("scannerMacBox");
+const readerMac = document.getElementById("readerMac");
+const macsSeleccionadasBox = document.getElementById("macsSeleccionadasBox");
+const macsSeleccionadasLista = document.getElementById(
+  "macsSeleccionadasLista",
+);
+
+let equiposInventarioContrato = [];
+let macsContrato = [];
+let timeoutBuscarEquipo = null;
+let scannerMac = null;
+let scannerMacActivo = false;
+
 const form = document.getElementById("formContratoFibra");
 const btnGenerarContrato = document.getElementById("btnGenerarContrato");
 const btnGenerarContratoBottom = document.getElementById(
@@ -9,8 +42,12 @@ const btnLimpiar = document.getElementById("btnLimpiar");
 // =========================
 // UBICACIÓN / MAPA CONTRATO
 // =========================
-const btnObtenerUbicacionContrato = document.getElementById("btnObtenerUbicacionContrato");
-const estadoUbicacionContrato = document.getElementById("estadoUbicacionContrato");
+const btnObtenerUbicacionContrato = document.getElementById(
+  "btnObtenerUbicacionContrato",
+);
+const estadoUbicacionContrato = document.getElementById(
+  "estadoUbicacionContrato",
+);
 const contenedorMapaContrato = document.getElementById("mapaContrato");
 
 const inputUbicacionLat = document.getElementById("ubicacion_lat");
@@ -18,9 +55,15 @@ const inputUbicacionLng = document.getElementById("ubicacion_lng");
 const inputUbicacionPrecision = document.getElementById("ubicacion_precision");
 const inputUbicacionFuente = document.getElementById("ubicacion_fuente");
 
-const inputUbicacionLatVisible = document.getElementById("ubicacion_lat_visible");
-const inputUbicacionLngVisible = document.getElementById("ubicacion_lng_visible");
-const inputUbicacionPrecisionVisible = document.getElementById("ubicacion_precision_visible");
+const inputUbicacionLatVisible = document.getElementById(
+  "ubicacion_lat_visible",
+);
+const inputUbicacionLngVisible = document.getElementById(
+  "ubicacion_lng_visible",
+);
+const inputUbicacionPrecisionVisible = document.getElementById(
+  "ubicacion_precision_visible",
+);
 
 let mapaContrato = null;
 let marcadorContrato = null;
@@ -28,8 +71,12 @@ let circuloPrecisionContrato = null;
 let ubicacionFueAjustadaManual = false;
 
 const documentosContratoInput = document.getElementById("documentosContrato");
-const listaDocumentosContrato = document.getElementById("listaDocumentosContrato");
-const documentosContratoPreview = document.getElementById("documentosContratoPreview");
+const listaDocumentosContrato = document.getElementById(
+  "listaDocumentosContrato",
+);
+const documentosContratoPreview = document.getElementById(
+  "documentosContratoPreview",
+);
 
 let signatureImageSaved1 = null;
 let signaturePadPreview = null;
@@ -56,7 +103,8 @@ function inicializarDocumentosContrato() {
 
     archivos.forEach((archivo, index) => {
       const li = document.createElement("li");
-      li.className = "flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-2";
+      li.className =
+        "flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-2";
 
       li.innerHTML = `
         <span class="truncate">
@@ -126,7 +174,10 @@ function checked(id) {
 function inicializarUbicacionContrato() {
   if (!btnObtenerUbicacionContrato) return;
 
-  btnObtenerUbicacionContrato.addEventListener("click", obtenerUbicacionContrato);
+  btnObtenerUbicacionContrato.addEventListener(
+    "click",
+    obtenerUbicacionContrato,
+  );
 }
 
 function obtenerUbicacionContrato() {
@@ -179,7 +230,7 @@ function obtenerUbicacionContrato() {
       guardarUbicacionContrato(lat, lng, precision, "gps");
 
       actualizarEstadoUbicacion(
-        `Ubicación capturada correctamente. Precisión aproximada: <b>${Math.round(precision)} metros</b>. Puedes mover el pin si no está exacto.`
+        `Ubicación capturada correctamente. Precisión aproximada: <b>${Math.round(precision)} metros</b>. Puedes mover el pin si no está exacto.`,
       );
     },
     (error) => {
@@ -206,7 +257,7 @@ function obtenerUbicacionContrato() {
       enableHighAccuracy: true,
       timeout: 20000,
       maximumAge: 0,
-    }
+    },
   );
 }
 
@@ -240,11 +291,11 @@ function mostrarMapaContrato(lat, lng, precision = null) {
         nuevaPosicion.lat,
         nuevaPosicion.lng,
         inputUbicacionPrecision?.value || "",
-        "gps_ajustada"
+        "gps_ajustada",
       );
 
       actualizarEstadoUbicacion(
-        `Ubicación ajustada manualmente. Latitud: <b>${nuevaPosicion.lat.toFixed(8)}</b>, Longitud: <b>${nuevaPosicion.lng.toFixed(8)}</b>.`
+        `Ubicación ajustada manualmente. Latitud: <b>${nuevaPosicion.lat.toFixed(8)}</b>, Longitud: <b>${nuevaPosicion.lng.toFixed(8)}</b>.`,
       );
     });
 
@@ -260,11 +311,13 @@ function mostrarMapaContrato(lat, lng, precision = null) {
         latClick,
         lngClick,
         inputUbicacionPrecision?.value || "",
-        inputUbicacionLat?.value && inputUbicacionLng?.value ? "gps_ajustada" : "manual"
+        inputUbicacionLat?.value && inputUbicacionLng?.value
+          ? "gps_ajustada"
+          : "manual",
       );
 
       actualizarEstadoUbicacion(
-        `Pin colocado manualmente. Latitud: <b>${latClick.toFixed(8)}</b>, Longitud: <b>${lngClick.toFixed(8)}</b>.`
+        `Pin colocado manualmente. Latitud: <b>${latClick.toFixed(8)}</b>, Longitud: <b>${lngClick.toFixed(8)}</b>.`,
       );
     });
   } else {
@@ -297,9 +350,10 @@ function guardarUbicacionContrato(lat, lng, precision = "", fuente = "gps") {
   if (inputUbicacionLng) inputUbicacionLng.value = lngFinal.toFixed(8);
 
   if (inputUbicacionPrecision) {
-    inputUbicacionPrecision.value = precision !== "" && precision !== null
-      ? Number(precision).toFixed(2)
-      : "";
+    inputUbicacionPrecision.value =
+      precision !== "" && precision !== null
+        ? Number(precision).toFixed(2)
+        : "";
   }
 
   if (inputUbicacionFuente) {
@@ -315,9 +369,10 @@ function guardarUbicacionContrato(lat, lng, precision = "", fuente = "gps") {
   }
 
   if (inputUbicacionPrecisionVisible) {
-    inputUbicacionPrecisionVisible.value = precision !== "" && precision !== null
-      ? `${Math.round(Number(precision))} metros`
-      : "Manual";
+    inputUbicacionPrecisionVisible.value =
+      precision !== "" && precision !== null
+        ? `${Math.round(Number(precision))} metros`
+        : "Manual";
   }
 }
 
@@ -343,7 +398,8 @@ function limpiarUbicacionContrato() {
   if (inputUbicacionPrecisionVisible) inputUbicacionPrecisionVisible.value = "";
 
   if (estadoUbicacionContrato) {
-    estadoUbicacionContrato.innerHTML = "Aún no se ha capturado la ubicación del domicilio.";
+    estadoUbicacionContrato.innerHTML =
+      "Aún no se ha capturado la ubicación del domicilio.";
   }
 
   if (circuloPrecisionContrato && mapaContrato) {
@@ -683,42 +739,42 @@ function validarFormulario() {
   });
   const correoElectronico = document.getElementById("correoElectronico");
 
-if (correoElectronico) {
-  const correo = correoElectronico.value.trim();
+  if (correoElectronico) {
+    const correo = correoElectronico.value.trim();
 
-  if (!correo) {
-    marcarError(correoElectronico);
-    valido = false;
-  } else if (!esCorreoValido(correo)) {
-    marcarError(correoElectronico);
-    valido = false;
+    if (!correo) {
+      marcarError(correoElectronico);
+      valido = false;
+    } else if (!esCorreoValido(correo)) {
+      marcarError(correoElectronico);
+      valido = false;
 
-  Swal.fire({
-  icon: "warning",
-  title: "Correo inválido",
-  text: "Ingresa un correo válido, sin acentos ni caracteres especiales. Ejemplo: cliente@dominio.com",
-  background: "#0b1120",
-  color: "#e2e8f0",
-  confirmButtonColor: "#0284c7",
-});
+      Swal.fire({
+        icon: "warning",
+        title: "Correo inválido",
+        text: "Ingresa un correo válido, sin acentos ni caracteres especiales. Ejemplo: cliente@dominio.com",
+        background: "#0b1120",
+        color: "#e2e8f0",
+        confirmButtonColor: "#0284c7",
+      });
 
-    return false;
+      return false;
+    }
   }
-}
   const radiosRequeridos = [
-  "tipoTelefono",
-  "aplicaReconexcion",
-  "tipoVigencia",
-  "tipoEntregaEquipo",
-  "modalidadPagoEquipo",
-  "autorizaCargoTarjeta",
-  "envioFactura",
-  "envioCartaDerechos",
-  "envioContratoAdhesion",
-  "medioElectronico",
-  "autorizaCederInfo",
-  "autorizaLlamadasPromo",
-];
+    "tipoTelefono",
+    "aplicaReconexcion",
+    "tipoVigencia",
+    "tipoEntregaEquipo",
+    "modalidadPagoEquipo",
+    "autorizaCargoTarjeta",
+    "envioFactura",
+    "envioCartaDerechos",
+    "envioContratoAdhesion",
+    "medioElectronico",
+    "autorizaCederInfo",
+    "autorizaLlamadasPromo",
+  ];
 
   radiosRequeridos.forEach((name) => {
     const marcado = document.querySelector(`input[name="${name}"]:checked`);
@@ -969,7 +1025,553 @@ function normalizarDatosFibra(datos) {
     },
   };
 }
+function formatoMonedaMX(valor) {
+  const numero = Number(valor || 0);
 
+  return numero.toLocaleString("es-MX", {
+    style: "currency",
+    currency: "MXN",
+  });
+}
+
+function normalizarTextoEquipo(valor) {
+  return String(valor || "").trim();
+}
+
+function separarValoresPorComa(texto) {
+  return String(texto || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function sincronizarCamposEquipoDesdeSeleccion() {
+  if (!inputMarcaEquipo || !inputModeloEquipo || !inputNumeroEquipos || !inputCostoTotalEquipo) return;
+
+  // Si ya no hay equipos seleccionados, limpiar campos del inventario
+  if (equiposInventarioContrato.length === 0) {
+    inputMarcaEquipo.value = "";
+    inputModeloEquipo.value = "";
+    inputNumeroEquipos.value = "";
+    inputCostoTotalEquipo.value = "";
+    return;
+  }
+
+  const marcas = [];
+  const modelos = [];
+  let cantidadTotal = 0;
+  let costoTotal = 0;
+
+  equiposInventarioContrato.forEach((item) => {
+    if (item.marca && !marcas.includes(item.marca)) {
+      marcas.push(item.marca);
+    }
+
+    const modeloTexto = item.modelo || item.descripcion || "";
+    if (modeloTexto && !modelos.includes(modeloTexto)) {
+      modelos.push(modeloTexto);
+    }
+
+    cantidadTotal += Number(item.cantidad || 0);
+    costoTotal += Number(item.precio_venta || 0) * Number(item.cantidad || 0);
+  });
+
+  inputMarcaEquipo.value = marcas.join(", ");
+  inputModeloEquipo.value = modelos.join(", ");
+  inputNumeroEquipos.value = cantidadTotal;
+  inputCostoTotalEquipo.value = formatoMonedaMX(costoTotal);
+}
+
+function renderEquiposSeleccionados() {
+  if (!equiposSeleccionadosBox || !equiposSeleccionadosLista) return;
+
+  equiposSeleccionadosLista.innerHTML = "";
+
+  if (equiposInventarioContrato.length === 0) {
+    equiposSeleccionadosBox.classList.add("hidden");
+    return;
+  }
+
+  equiposSeleccionadosBox.classList.remove("hidden");
+
+  equiposInventarioContrato.forEach((item, index) => {
+    const nombre =
+      [item.marca, item.modelo].filter(Boolean).join(" ") ||
+      item.descripcion ||
+      "Equipo";
+    const precio = Number(item.precio_venta || 0);
+    const cantidad = Number(item.cantidad || 1);
+    const total = precio * cantidad;
+
+    const div = document.createElement("div");
+    div.className =
+      "flex flex-col gap-3 rounded-2xl border border-cyan-400/20 bg-white/5 p-3 md:flex-row md:items-center md:justify-between";
+
+    div.innerHTML = `
+      <div class="min-w-0">
+        <p class="font-bold text-white">${nombre}</p>
+        <p class="text-xs text-slate-400">
+          Código: ${item.codigo || "N/A"} · Stock disponible: ${item.stock} · Propietario: ${item.propietario || "N/A"}
+        </p>
+        <p class="text-xs text-cyan-200">
+          ${formatoMonedaMX(precio)} x ${cantidad} = ${formatoMonedaMX(total)}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input
+          type="number"
+          min="1"
+          max="${item.stock}"
+          value="${cantidad}"
+          data-index="${index}"
+          class="cantidad-equipo-stock w-24 rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400"
+        >
+
+        <button
+          type="button"
+          data-index="${index}"
+          class="btn-eliminar-equipo-stock rounded-xl bg-red-500/10 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-500/20 transition"
+        >
+          Eliminar
+        </button>
+      </div>
+    `;
+
+    equiposSeleccionadosLista.appendChild(div);
+  });
+
+  equiposSeleccionadosLista
+    .querySelectorAll(".btn-eliminar-equipo-stock")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+      const index = Number(btn.dataset.index);
+
+      equiposInventarioContrato.splice(index, 1);
+
+      sincronizarCamposEquipoDesdeSeleccion();
+      renderEquiposSeleccionados();
+      });
+    });
+
+  equiposSeleccionadosLista
+    .querySelectorAll(".cantidad-equipo-stock")
+    .forEach((input) => {
+      input.addEventListener("change", () => {
+        const index = Number(input.dataset.index);
+        const item = equiposInventarioContrato[index];
+
+        if (!item) return;
+
+        let cantidad = Number(input.value || 1);
+
+        if (cantidad < 1) cantidad = 1;
+
+        if (cantidad > Number(item.stock)) {
+          cantidad = Number(item.stock);
+
+          Swal.fire({
+            icon: "warning",
+            title: "Stock insuficiente",
+            text: `Solo hay ${item.stock} unidades disponibles de este equipo.`,
+            background: "#0b1120",
+            color: "#e2e8f0",
+            confirmButtonColor: "#0284c7",
+          });
+        }
+
+        item.cantidad = cantidad;
+        input.value = cantidad;
+
+        renderEquiposSeleccionados();
+        sincronizarCamposEquipoDesdeSeleccion();
+      });
+    });
+}
+
+function agregarEquipoInventario(producto) {
+  const inventarioId = Number(producto.inventario_usuario_id);
+  const existente = equiposInventarioContrato.find(
+    (item) => Number(item.inventario_usuario_id) === inventarioId,
+  );
+
+  if (existente) {
+    if (Number(existente.cantidad) + 1 > Number(existente.stock)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Stock insuficiente",
+        text: `Ya seleccionaste todo el stock disponible de este equipo.`,
+        background: "#0b1120",
+        color: "#e2e8f0",
+        confirmButtonColor: "#0284c7",
+      });
+      return;
+    }
+
+    existente.cantidad += 1;
+  } else {
+    equiposInventarioContrato.push({
+      inventario_usuario_id: Number(producto.inventario_usuario_id),
+      producto_id: Number(producto.producto_id),
+      usuario_propietario_id: Number(producto.usuario_propietario_id),
+      propietario: producto.propietario || "",
+      codigo: producto.codigo || "",
+      marca: producto.marca || "",
+      modelo: producto.modelo || "",
+      descripcion: producto.descripcion || "",
+      precio_venta: Number(producto.precio_venta || 0),
+      precio_proveedor: Number(producto.precio_proveedor || 0),
+      stock: Number(producto.stock || 0),
+      cantidad: 1,
+    });
+  }
+
+  if (inputBuscarEquipoStock) {
+    inputBuscarEquipoStock.value = "";
+  }
+
+  if (resultadosEquipoStock) {
+    resultadosEquipoStock.classList.add("hidden");
+    resultadosEquipoStock.innerHTML = "";
+  }
+
+  renderEquiposSeleccionados();
+  sincronizarCamposEquipoDesdeSeleccion();
+}
+
+function renderResultadosEquipoStock(productos) {
+  if (!resultadosEquipoStock) return;
+
+  resultadosEquipoStock.innerHTML = "";
+
+  if (!productos || productos.length === 0) {
+    resultadosEquipoStock.innerHTML = `
+      <div class="p-4 text-sm text-slate-400">
+        No se encontraron equipos disponibles.
+      </div>
+    `;
+    resultadosEquipoStock.classList.remove("hidden");
+    return;
+  }
+
+  productos.forEach((producto) => {
+    const nombre =
+      [producto.marca, producto.modelo].filter(Boolean).join(" ") ||
+      producto.descripcion ||
+      "Equipo";
+    const precio = Number(producto.precio_venta || 0);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className =
+      "block w-full border-b border-white/5 px-4 py-3 text-left hover:bg-cyan-500/10 transition";
+
+    btn.innerHTML = `
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="font-bold text-white">${nombre}</p>
+          <p class="text-xs text-slate-400">
+            ${producto.descripcion || ""} ${producto.codigo ? "· Código: " + producto.codigo : ""}
+          </p>
+          <p class="text-xs text-cyan-200">
+            Stock: ${producto.stock} · ${formatoMonedaMX(precio)} · ${producto.propietario || "Sin propietario"}
+          </p>
+        </div>
+        <span class="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-200">
+          Agregar
+        </span>
+      </div>
+    `;
+
+    btn.addEventListener("click", () => agregarEquipoInventario(producto));
+
+    resultadosEquipoStock.appendChild(btn);
+  });
+
+  resultadosEquipoStock.classList.remove("hidden");
+}
+
+async function buscarEquiposStock(q) {
+  const busqueda = normalizarTextoEquipo(q);
+
+  if (!busqueda || busqueda.length < 2) {
+    if (resultadosEquipoStock) {
+      resultadosEquipoStock.classList.add("hidden");
+      resultadosEquipoStock.innerHTML = "";
+    }
+    return;
+  }
+
+  try {
+    const resp = await fetch(
+      `../php/equipos_contrato_controller.php?accion=buscar&q=${encodeURIComponent(busqueda)}`,
+    );
+    const data = await resp.json();
+
+    if (!data.ok) {
+      throw new Error(data.message || "No se pudieron buscar equipos.");
+    }
+
+    renderResultadosEquipoStock(data.productos || []);
+  } catch (error) {
+    console.error(error);
+
+    if (resultadosEquipoStock) {
+      resultadosEquipoStock.innerHTML = `
+        <div class="p-4 text-sm text-red-300">
+          ${error.message || "Error buscando equipos."}
+        </div>
+      `;
+      resultadosEquipoStock.classList.remove("hidden");
+    }
+  }
+}
+
+function inicializarBuscadorEquipoStock() {
+  if (!inputBuscarEquipoStock) return;
+
+  inputBuscarEquipoStock.addEventListener("input", () => {
+    clearTimeout(timeoutBuscarEquipo);
+
+    timeoutBuscarEquipo = setTimeout(() => {
+      buscarEquiposStock(inputBuscarEquipoStock.value);
+    }, 350);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!resultadosEquipoStock || !inputBuscarEquipoStock) return;
+
+    const clickDentro =
+      resultadosEquipoStock.contains(e.target) ||
+      inputBuscarEquipoStock.contains(e.target);
+
+    if (!clickDentro) {
+      resultadosEquipoStock.classList.add("hidden");
+    }
+  });
+}
+
+function normalizarMac(mac) {
+  return String(mac || "")
+    .trim()
+    .replace(/\s+/g, "")
+    .toUpperCase();
+}
+
+function refrescarInputMacs() {
+  if (!inputNumeroSerie) return;
+
+  if (macsContrato.length > 0) {
+    inputNumeroSerie.value = macsContrato.join(", ");
+  } else {
+    inputNumeroSerie.value = "";
+  }
+}
+
+function renderMacsSeleccionadas() {
+  if (!macsSeleccionadasBox || !macsSeleccionadasLista) return;
+
+  macsSeleccionadasLista.innerHTML = "";
+
+  if (macsContrato.length === 0) {
+    macsSeleccionadasBox.classList.add("hidden");
+    return;
+  }
+
+  macsSeleccionadasBox.classList.remove("hidden");
+
+  macsContrato.forEach((mac, index) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className =
+      "rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-2 text-xs font-bold text-cyan-100 hover:bg-red-500/20 hover:text-red-100 transition";
+    chip.textContent = `${mac}  ×`;
+    chip.title = "Eliminar";
+
+    chip.addEventListener("click", () => {
+      macsContrato.splice(index, 1);
+
+      refrescarInputMacs();
+      renderMacsSeleccionadas();
+    });
+
+    macsSeleccionadasLista.appendChild(chip);
+  });
+}
+
+function agregarMacContrato(macLeida) {
+  const mac = normalizarMac(macLeida);
+
+  if (!mac) return;
+
+  const existentesInput = separarValoresPorComa(
+    inputNumeroSerie?.value || "",
+  ).map(normalizarMac);
+  const existentes = [
+    ...new Set([...macsContrato, ...existentesInput].filter(Boolean)),
+  ];
+
+  if (!existentes.includes(mac)) {
+    existentes.push(mac);
+  }
+
+  macsContrato = existentes;
+
+  refrescarInputMacs();
+  renderMacsSeleccionadas();
+}
+
+function sincronizarMacsDesdeInput() {
+  if (!inputNumeroSerie) return;
+
+  const valores = separarValoresPorComa(inputNumeroSerie.value).map(
+    normalizarMac,
+  );
+  macsContrato = [...new Set(valores.filter(Boolean))];
+
+  renderMacsSeleccionadas();
+}
+
+async function detenerScannerMac() {
+  if (scannerMac && scannerMacActivo) {
+    try {
+      await scannerMac.stop();
+      await scannerMac.clear();
+    } catch (error) {
+      console.warn("No se pudo detener scanner:", error);
+    }
+  }
+
+  scannerMacActivo = false;
+  scannerMac = null;
+
+  if (scannerMacBox) {
+    scannerMacBox.classList.add("hidden");
+  }
+}
+
+async function iniciarScannerMac() {
+  if (!scannerMacBox || !readerMac) return;
+
+  if (typeof Html5Qrcode === "undefined") {
+    Swal.fire({
+      icon: "error",
+      title: "Escáner no disponible",
+      text: "No se cargó la librería html5-qrcode.",
+      background: "#0b1120",
+      color: "#e2e8f0",
+      confirmButtonColor: "#0284c7",
+    });
+    return;
+  }
+
+  scannerMacBox.classList.remove("hidden");
+
+  try {
+    if (scannerMacActivo) {
+      await detenerScannerMac();
+      scannerMacBox.classList.remove("hidden");
+    }
+
+    scannerMac = new Html5Qrcode("readerMac");
+    scannerMacActivo = true;
+
+    await scannerMac.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+      },
+      async (decodedText) => {
+        agregarMacContrato(decodedText);
+
+        Swal.fire({
+          icon: "success",
+          title: "Código leído",
+          text: decodedText,
+          timer: 900,
+          showConfirmButton: false,
+          background: "#0b1120",
+          color: "#e2e8f0",
+        });
+
+        await detenerScannerMac();
+      },
+      () => {},
+    );
+  } catch (error) {
+    console.error(error);
+
+    scannerMacActivo = false;
+
+    Swal.fire({
+      icon: "error",
+      title: "No se pudo abrir la cámara",
+      text: "Verifica permisos del navegador. En celular normalmente debe estar en HTTPS.",
+      background: "#0b1120",
+      color: "#e2e8f0",
+      confirmButtonColor: "#0284c7",
+    });
+  }
+}
+
+function inicializarScannerMac() {
+  if (btnEscanearMac) {
+    btnEscanearMac.addEventListener("click", iniciarScannerMac);
+  }
+
+  if (btnCerrarScannerMac) {
+    btnCerrarScannerMac.addEventListener("click", detenerScannerMac);
+  }
+
+  if (inputNumeroSerie) {
+    inputNumeroSerie.addEventListener("change", sincronizarMacsDesdeInput);
+    inputNumeroSerie.addEventListener("blur", sincronizarMacsDesdeInput);
+  }
+}
+
+async function validarStockEquiposInventario() {
+  if (!equiposInventarioContrato || equiposInventarioContrato.length === 0) {
+    return true;
+  }
+
+  const equipos = equiposInventarioContrato.map((item) => ({
+    inventario_usuario_id: Number(item.inventario_usuario_id),
+    cantidad: Number(item.cantidad || 1),
+  }));
+
+  const resp = await fetch("../php/equipos_contrato_controller.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      accion: "validar_stock",
+      equipos,
+    }),
+  });
+
+  const data = await resp.json();
+
+  if (!data.ok || !data.valido) {
+    const errores = data.errores?.length
+      ? data.errores.join("\n")
+      : data.message || "Hay problemas con el stock seleccionado.";
+
+    Swal.fire({
+      icon: "error",
+      title: "Stock no disponible",
+      text: errores,
+      background: "#0b1120",
+      color: "#e2e8f0",
+      confirmButtonColor: "#0284c7",
+    });
+
+    return false;
+  }
+
+  return true;
+}
 function obtenerDatosFibra() {
   return {
     contrato: {
@@ -991,11 +1593,11 @@ function obtenerDatosFibra() {
       rfc: valor("rfc"),
     },
     ubicacion: {
-  lat: valor("ubicacion_lat"),
-  lng: valor("ubicacion_lng"),
-  precision: valor("ubicacion_precision"),
-  fuente: valor("ubicacion_fuente"),
-},
+      lat: valor("ubicacion_lat"),
+      lng: valor("ubicacion_lng"),
+      precision: valor("ubicacion_precision"),
+      fuente: valor("ubicacion_fuente"),
+    },
     contacto: {
       tipoTelefono: radioValue("tipoTelefono"),
       telefono: valor("telefono"),
@@ -1022,6 +1624,7 @@ function obtenerDatosFibra() {
       modalidadPago: radioValue("modalidadPagoEquipo"),
       costoDiferido: valor("costoDiferido"),
       mesesDiferido: valor("mesesDiferido"),
+      equiposInventario: equiposInventarioContrato || [],
     },
     instalacion: {
       domicilio: valor("domicilioInstalacion"),
@@ -1310,7 +1913,11 @@ async function generarPdfFibra(datosFormulario) {
     markCircle(pdf, datos.suscriptor.tipoTelefono === "fijo", 98, 219, 3);
     markCircle(pdf, datos.suscriptor.tipoTelefono === "movil", 146, 218, 3);
 
-    write(pdf, datos.servicio.nombrePaquete || datos.servicio.descripcionPaquete, mapaFibra.p1.paquete);
+    write(
+      pdf,
+      datos.servicio.nombrePaquete || datos.servicio.descripcionPaquete,
+      mapaFibra.p1.paquete,
+    );
     write(pdf, datos.servicio.mensualidad, mapaFibra.p1.mensualidad);
     splitAndWrite(
       pdf,
@@ -1334,20 +1941,8 @@ async function generarPdfFibra(datosFormulario) {
     );
     write(pdf, datos.servicio.mesesPlazo, mapaFibra.p1.mesesPlazo);
 
-    markCircle(
-      pdf,
-      datos.equipo.tipoEntregaEquipo === "1",
-      146.5,
-      436.5,
-      3,
-    );
-    markCircle(
-      pdf,
-      datos.equipo.tipoEntregaEquipo === "2",
-      146.5,
-      448.5,
-      3,
-    );
+    markCircle(pdf, datos.equipo.tipoEntregaEquipo === "1", 146.5, 436.5, 3);
+    markCircle(pdf, datos.equipo.tipoEntregaEquipo === "2", 146.5, 448.5, 3);
 
     write(pdf, datos.equipo.marcaEquipo, mapaFibra.p1.marcaEquipo);
     write(pdf, datos.equipo.modeloEquipo, mapaFibra.p1.modeloEquipo);
@@ -1675,10 +2270,10 @@ async function guardarContratoFibra(datosFibra) {
   formData.append("cp", datosFibra.domicilio.cp || "");
   formData.append("rfc", datosFibra.domicilio.rfc || "");
   // Ubicación GPS del domicilio
-formData.append("ubicacion_lat", datosFibra.ubicacion?.lat || "");
-formData.append("ubicacion_lng", datosFibra.ubicacion?.lng || "");
-formData.append("ubicacion_precision", datosFibra.ubicacion?.precision || "");
-formData.append("ubicacion_fuente", datosFibra.ubicacion?.fuente || "");
+  formData.append("ubicacion_lat", datosFibra.ubicacion?.lat || "");
+  formData.append("ubicacion_lng", datosFibra.ubicacion?.lng || "");
+  formData.append("ubicacion_precision", datosFibra.ubicacion?.precision || "");
+  formData.append("ubicacion_fuente", datosFibra.ubicacion?.fuente || "");
 
   // Contacto
   formData.append("telefono", datosFibra.contacto.telefono || "");
@@ -1714,6 +2309,10 @@ formData.append("ubicacion_fuente", datosFibra.ubicacion?.fuente || "");
   formData.append("modalidadPagoEquipo", datosFibra.equipo.modalidadPago || "");
   formData.append("costoDiferido", datosFibra.equipo.costoDiferido || "");
   formData.append("mesesDiferido", datosFibra.equipo.mesesDiferido || "");
+  formData.append(
+    "equiposInventario",
+    JSON.stringify(datosFibra.equipo.equiposInventario || []),
+  );
 
   // Instalación
   formData.append(
@@ -1822,13 +2421,13 @@ formData.append("ubicacion_fuente", datosFibra.ubicacion?.fuente || "");
 
   // Evidencia: de momento vacía o luego la llenas con la ruta que te devuelva tu upload aparte
   // Evidencia / documentos adjuntos
-const inputDocumentos = document.getElementById("documentosContrato");
+  const inputDocumentos = document.getElementById("documentosContrato");
 
-if (inputDocumentos && inputDocumentos.files.length > 0) {
-  Array.from(inputDocumentos.files).forEach((archivo) => {
-    formData.append("documentosContrato[]", archivo);
-  });
-}
+  if (inputDocumentos && inputDocumentos.files.length > 0) {
+    Array.from(inputDocumentos.files).forEach((archivo) => {
+      formData.append("documentosContrato[]", archivo);
+    });
+  }
 
   const resp = await fetch("../php/guardar_contrato.php", {
     method: "POST",
@@ -1853,6 +2452,10 @@ async function accionGenerar() {
     // 2. Validar que el número de contrato esté disponible
     const contratoValido = await validarNumeroContrato();
     if (!contratoValido) return;
+
+    // 2.1 Validar stock de equipos seleccionados
+    const stockValido = await validarStockEquiposInventario();
+    if (!stockValido) return;
 
     // 3. Obtener datos ya validados
     const datosFibra = obtenerDatosFibra();
@@ -1888,35 +2491,35 @@ async function accionGenerar() {
 }
 //auxiliares
 function actualizarEstadoReconexcion() {
-  const tipo = radioValue('aplicaReconexcion');
-  const inputMonto = document.getElementById('montoReconexcion');
-  const inputNom = document.getElementById('nomNumeral');
+  const tipo = radioValue("aplicaReconexcion");
+  const inputMonto = document.getElementById("montoReconexcion");
+  const inputNom = document.getElementById("nomNumeral");
 
   if (!inputMonto || !inputNom) return;
 
   // HTML actual:
   // 2 = Sí
   // 1 = No
-  const aplica = tipo === '2';
+  const aplica = tipo === "2";
 
   if (aplica) {
     inputMonto.disabled = false;
     inputNom.disabled = false;
 
-    inputMonto.dataset.requiredConditional = 'true';
-    inputNom.dataset.requiredConditional = 'true';
+    inputMonto.dataset.requiredConditional = "true";
+    inputNom.dataset.requiredConditional = "true";
   } else {
-    inputMonto.value = '';
-    inputNom.value = '';
+    inputMonto.value = "";
+    inputNom.value = "";
 
     inputMonto.disabled = true;
     inputNom.disabled = true;
 
-    inputMonto.dataset.requiredConditional = 'false';
-    inputNom.dataset.requiredConditional = 'false';
+    inputMonto.dataset.requiredConditional = "false";
+    inputNom.dataset.requiredConditional = "false";
 
-    inputMonto.classList.remove('field-error');
-    inputNom.classList.remove('field-error');
+    inputMonto.classList.remove("field-error");
+    inputNom.classList.remove("field-error");
   }
 }
 function textoSeleccionado(id) {
@@ -1926,43 +2529,43 @@ function textoSeleccionado(id) {
   return option ? option.text.trim() : "";
 }
 function actualizarEstadoVigencia() {
-  const tipo = radioValue('tipoVigencia');
-  const inputMeses = document.getElementById('mesesPlazo');
-  const inputPenalidad = document.getElementById('penalidadTexto');
+  const tipo = radioValue("tipoVigencia");
+  const inputMeses = document.getElementById("mesesPlazo");
+  const inputPenalidad = document.getElementById("penalidadTexto");
 
   if (!inputMeses || !inputPenalidad) return;
 
-  const aplicaPlazo = tipo === 'plazo_forzoso';
+  const aplicaPlazo = tipo === "plazo_forzoso";
 
   if (aplicaPlazo) {
     inputMeses.disabled = false;
     inputPenalidad.disabled = false;
 
-    inputMeses.dataset.requiredConditional = 'true';
-    inputPenalidad.dataset.requiredConditional = 'true';
+    inputMeses.dataset.requiredConditional = "true";
+    inputPenalidad.dataset.requiredConditional = "true";
   } else {
-    inputMeses.value = '';
-    inputPenalidad.value = '';
+    inputMeses.value = "";
+    inputPenalidad.value = "";
 
     inputMeses.disabled = true;
     inputPenalidad.disabled = true;
 
-    inputMeses.dataset.requiredConditional = 'false';
-    inputPenalidad.dataset.requiredConditional = 'false';
+    inputMeses.dataset.requiredConditional = "false";
+    inputPenalidad.dataset.requiredConditional = "false";
 
-    inputMeses.classList.remove('field-error');
-    inputPenalidad.classList.remove('field-error');
+    inputMeses.classList.remove("field-error");
+    inputPenalidad.classList.remove("field-error");
   }
 }
 function bindServicioInternetEvents() {
-  document.querySelectorAll('input[name="aplicaReconexcion"]').forEach(el => {
-    el.addEventListener('change', () => {
+  document.querySelectorAll('input[name="aplicaReconexcion"]').forEach((el) => {
+    el.addEventListener("change", () => {
       actualizarEstadoReconexcion();
     });
   });
 
-  document.querySelectorAll('input[name="tipoVigencia"]').forEach(el => {
-    el.addEventListener('change', () => {
+  document.querySelectorAll('input[name="tipoVigencia"]').forEach((el) => {
+    el.addEventListener("change", () => {
       actualizarEstadoVigencia();
     });
   });
@@ -1974,13 +2577,13 @@ function bindServicioInternetEvents() {
 function validarSeccionServicioInternet() {
   let valido = true;
 
-  const paquete = document.getElementById('descripcionPaquete');
-  const mensualidad = document.getElementById('mensualidad');
-  const fechaPago = document.getElementById('fechaPago');
-  const montoReconexcion = document.getElementById('montoReconexcion');
-  const nomNumeral = document.getElementById('nomNumeral');
-  const mesesPlazo = document.getElementById('mesesPlazo');
-  const penalidadTexto = document.getElementById('penalidadTexto');
+  const paquete = document.getElementById("descripcionPaquete");
+  const mensualidad = document.getElementById("mensualidad");
+  const fechaPago = document.getElementById("fechaPago");
+  const montoReconexcion = document.getElementById("montoReconexcion");
+  const nomNumeral = document.getElementById("nomNumeral");
+  const mesesPlazo = document.getElementById("mesesPlazo");
+  const penalidadTexto = document.getElementById("penalidadTexto");
 
   if (!paquete || !paquete.value.trim()) {
     marcarError(paquete);
@@ -1998,7 +2601,7 @@ function validarSeccionServicioInternet() {
   }
 
   // Reconexión
-  const aplicaReconexcion = radioValue('aplicaReconexcion');
+  const aplicaReconexcion = radioValue("aplicaReconexcion");
 
   if (!aplicaReconexcion) {
     marcarErrorBox('[data-radio-group="aplicaReconexcion"]');
@@ -2006,7 +2609,7 @@ function validarSeccionServicioInternet() {
   }
 
   // HTML actual: 2 = Sí, 1 = No
-  if (aplicaReconexcion === '2') {
+  if (aplicaReconexcion === "2") {
     if (!montoReconexcion || !montoReconexcion.value.trim()) {
       marcarError(montoReconexcion);
       valido = false;
@@ -2019,14 +2622,14 @@ function validarSeccionServicioInternet() {
   }
 
   // Vigencia
-  const tipoVigencia = radioValue('tipoVigencia');
+  const tipoVigencia = radioValue("tipoVigencia");
 
   if (!tipoVigencia) {
     marcarErrorBox('[data-radio-group="tipoVigencia"]');
     valido = false;
   }
 
-  if (tipoVigencia === 'plazo_forzoso') {
+  if (tipoVigencia === "plazo_forzoso") {
     const meses = Number(mesesPlazo?.value || 0);
 
     if (!mesesPlazo || !mesesPlazo.value.trim()) {
@@ -2054,12 +2657,14 @@ document.addEventListener("DOMContentLoaded", () => {
   bindServicioInternetEvents();
   inicializarDocumentosContrato();
   inicializarUbicacionContrato();
+  inicializarBuscadorEquipoStock();
+  inicializarScannerMac();
 
   const correoElectronico = document.getElementById("correoElectronico");
 
-if (correoElectronico) {
-  correoElectronico.addEventListener("input", () => {
-    correoElectronico.classList.remove("field-error");
-  });
-}
+  if (correoElectronico) {
+    correoElectronico.addEventListener("input", () => {
+      correoElectronico.classList.remove("field-error");
+    });
+  }
 });

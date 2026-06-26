@@ -635,8 +635,8 @@ if (!isset($_SESSION['username'])) {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="label-main">Costo total</label>
-                <input type="text" id="costoTotalEquipo" class="input-dark" placeholder="$0.00"
+                <label class="label-main">Total en equipos</label>
+                <input type="text" id="costoTotalEquipo" class="input-dark" placeholder="$0.00" disabled
                     value="">
             </div>
 
@@ -1033,17 +1033,41 @@ if (!isset($_SESSION['username'])) {
 
                     <div>
                         <label class="label-main">Día *</label>
-                        <input type="text" id="diaFirma" class="input-dark requerido" placeholder="Día" value="">
+                        <input 
+                            type="number" 
+                            id="diaFirma" 
+                            class="input-dark requerido" 
+                            placeholder="Día" 
+                            min="1" 
+                            max="31" 
+                            inputmode="numeric"
+                            >
                     </div>
 
                     <div>
                         <label class="label-main">Mes *</label>
-                        <input type="text" id="mesFirma" class="input-dark requerido" placeholder="Mes" value="">
+                        <input 
+                            type="number" 
+                            id="mesFirma" 
+                            class="input-dark requerido" 
+                            placeholder="Mes" 
+                            min="1" 
+                            max="12" 
+                            inputmode="numeric"
+                            >
                     </div>
 
                     <div>
                         <label class="label-main">Año *</label>
-                        <input type="text" id="anioFirma" class="input-dark requerido" placeholder="Año" value="">
+                        <input 
+                            type="number" 
+                            id="anioFirma" 
+                            class="input-dark requerido" 
+                            placeholder="Año" 
+                            min="2020" 
+                            max="2100" 
+                            inputmode="numeric"
+                            >
                     </div>
                 </div>
             </section>

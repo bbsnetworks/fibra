@@ -1846,6 +1846,7 @@ if (btnLimpiar) {
       if (!result.isConfirmed) return;
 
       form.reset();
+      inicializarFechasContrato(true);
       limpiarErrores();
       clearPreviewSignatureFibra();
       limpiarUbicacionContrato();
@@ -2648,6 +2649,59 @@ function validarSeccionServicioInternet() {
 
   return valido;
 }
+function pad2(numero) {
+  return String(numero).padStart(2, "0");
+}
+
+function obtenerFechaHoraLocalContrato() {
+  const ahora = new Date();
+
+  const anio = ahora.getFullYear();
+  const mes = ahora.getMonth() + 1;
+  const dia = ahora.getDate();
+
+  const hora = ahora.getHours();
+  const minutos = ahora.getMinutes();
+
+  return {
+    fechaInput: `${anio}-${pad2(mes)}-${pad2(dia)}`,
+    horaInput: `${pad2(hora)}:${pad2(minutos)}`,
+    dia: String(dia),
+    mes: String(mes),
+    anio: String(anio),
+  };
+}
+
+function inicializarFechasContrato(forzar = false) {
+  const datosFecha = obtenerFechaHoraLocalContrato();
+
+  const fechaInstalacion = document.getElementById("fechaInstalacion");
+  const horaInstalacion = document.getElementById("horaInstalacion");
+
+  const diaFirma = document.getElementById("diaFirma");
+  const mesFirma = document.getElementById("mesFirma");
+  const anioFirma = document.getElementById("anioFirma");
+
+  if (fechaInstalacion && (forzar || !fechaInstalacion.value)) {
+    fechaInstalacion.value = datosFecha.fechaInput;
+  }
+
+  if (horaInstalacion && (forzar || !horaInstalacion.value)) {
+    horaInstalacion.value = datosFecha.horaInput;
+  }
+
+  if (diaFirma && (forzar || !diaFirma.value)) {
+    diaFirma.value = datosFecha.dia;
+  }
+
+  if (mesFirma && (forzar || !mesFirma.value)) {
+    mesFirma.value = datosFecha.mes;
+  }
+
+  if (anioFirma && (forzar || !anioFirma.value)) {
+    anioFirma.value = datosFecha.anio;
+  }
+}
 document.addEventListener("DOMContentLoaded", () => {
   cargarVistaContratoFibra();
   inicializarPaqueteYPrecio();
@@ -2659,6 +2713,7 @@ document.addEventListener("DOMContentLoaded", () => {
   inicializarUbicacionContrato();
   inicializarBuscadorEquipoStock();
   inicializarScannerMac();
+  inicializarFechasContrato();
 
   const correoElectronico = document.getElementById("correoElectronico");
 

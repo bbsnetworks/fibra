@@ -83,7 +83,7 @@ function paqueteTexto($tarifa): string
         case "7":
             return "BBS Air 30";
         case "8":
-            return "Residencial 80 MB/s";
+            return "BBS Fiber 30";
         default:
             return (string) $tarifa;
     }

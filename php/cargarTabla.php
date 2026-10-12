@@ -164,103 +164,248 @@ function botonAccion($icono, $titulo, $clases, $onclick): string
     ';
 }
 
+
+/* =====================================================
+   LISTADO COMPACTO DE CONTRATOS
+===================================================== */
+
 if ($result && $result->num_rows > 0) {
-    echo '<div class="grid grid-cols-1 gap-5 xl:grid-cols-2">';
+
+    echo '
+    <div class="w-full overflow-x-auto">
+
+        <table class="w-full min-w-[1050px] border-collapse text-sm text-white">
+
+            <thead>
+                <tr class="border-b border-white/15 bg-[#10243a] text-left text-xs uppercase tracking-wide text-slate-400">
+
+                    <th class="px-4 py-4">Contrato</th>
+                    <th class="px-4 py-4">Cliente</th>
+                    <th class="px-4 py-4">Dirección</th>
+                    <th class="px-4 py-4">Fecha</th>
+                    <th class="px-4 py-4">Paquete</th>
+                    <th class="px-4 py-4">Ubicación</th>
+                    <th class="px-4 py-4">Estado</th>
+                    <th class="px-4 py-4 text-center">Acciones</th>
+
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-white/10">
+    ';
 
     while ($row = $result->fetch_assoc()) {
-        $idc = (int) $row['idcontrato'];
+
+        /* ============================================
+           DATOS DEL CONTRATO
+        ============================================ */
+
+        $idc = (int)$row['idcontrato'];
+
         $nombre = h($row['nombre']);
         $nombreData = h($row['nombre']);
+
         $dir = h($row['direccion']);
         $fecha = h($row['fecha']);
-        $status = strtolower(trim((string)($row['status'] ?? '')));
-        $paquete = h(paqueteTexto($row['tarifa']));
-        $usuarioCreado = (int)($row['usuario_creado'] ?? 0);
 
-        $fechaCancelacion = $row['fecha_cancelacion']
-            ? date('Y-m-d H:i', strtotime($row['fecha_cancelacion']))
+        $status = strtolower(
+            trim((string)($row['status'] ?? ''))
+        );
+
+        $paquete = h(paqueteTexto($row['tarifa']));
+
+        $usuarioCreado = (int)(
+            $row['usuario_creado'] ?? 0
+        );
+
+        $fechaCancelacion = !empty($row['fecha_cancelacion'])
+            ? date(
+                'Y-m-d H:i',
+                strtotime($row['fecha_cancelacion'])
+            )
             : '—';
+
+        /* ============================================
+           UBICACIÓN GUARDADA
+        ============================================ */
 
         $lat = $row['ubicacion_lat'];
         $lng = $row['ubicacion_lng'];
+
         $precision = $row['ubicacion_precision'];
         $fuente = $row['ubicacion_fuente'];
 
-        $fechaUbicacion = $row['ubicacion_fecha']
-            ? date('Y-m-d H:i', strtotime($row['ubicacion_fecha']))
+        $fechaUbicacion = !empty($row['ubicacion_fecha'])
+            ? date(
+                'Y-m-d H:i',
+                strtotime($row['ubicacion_fecha'])
+            )
             : '';
 
-        $tieneUbicacion = ($lat !== null && $lat !== '' && $lng !== null && $lng !== '');
+        $tieneUbicacion = (
+            $lat !== null &&
+            $lat !== '' &&
+            $lng !== null &&
+            $lng !== ''
+        );
+
+        /* ============================================
+           FILA PRINCIPAL
+        ============================================ */
 
         echo '
-        <article class="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0b1a2d] p-5 shadow-xl shadow-black/20 transition duration-200 hover:border-cyan-400/30 hover:bg-[#0d2038]">
-            
-            <div class="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-cyan-400/5 transition group-hover:bg-cyan-400/10"></div>
+        <tr class="bg-[#0b1d31] transition-colors hover:bg-[#102b44]">
 
-            <div class="relative flex flex-col gap-5">
-                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div class="min-w-0">
-                        <div class="mb-2 flex flex-wrap items-center gap-2">
-                            <span class="inline-flex rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-300">
-                                Contrato #' . $idc . '
-                            </span>
-                            ' . statusBadge($status) . '
-                        </div>
+            <!-- ID CONTRATO -->
+            <td class="px-4 py-4">
 
-                        <h3 class="truncate text-lg font-bold text-white">
-                            ' . $nombre . '
-                        </h3>
+                <span class="inline-flex rounded-lg bg-cyan-400/10 px-3 py-1.5 font-bold text-cyan-300">
+                    #' . $idc . '
+                </span>
 
-                        <p class="mt-2 flex items-start gap-2 text-sm text-slate-300">
-                            <i class="bi bi-geo-alt text-cyan-300 mt-0.5"></i>
-                            <span>' . $dir . '</span>
-                        </p>
-                    </div>
+            </td>
 
-                    <div class="shrink-0">
-                        ' . estadoCreadoBadge($status, $usuarioCreado) . '
-                    </div>
+            <!-- NOMBRE -->
+            <td class="px-4 py-4">
+
+                <div class="font-semibold text-white">
+                    ' . $nombre . '
                 </div>
 
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
-                        <p class="mb-1 text-xs uppercase tracking-wide text-white/40">Fecha</p>
-                        <p class="mb-0 text-sm font-semibold text-white">' . ($fecha ?: '—') . '</p>
-                    </div>
+                <div class="mt-1">
+                    ' . estadoCreadoBadge(
+                        $status,
+                        $usuarioCreado
+                    ) . '
+                </div>
 
-                    <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
-                        <p class="mb-1 text-xs uppercase tracking-wide text-white/40">' . ($status === 'cancelado' ? 'Cancelación' : 'Paquete') . '</p>
-                        <p class="mb-0 text-sm font-semibold text-white">' . ($status === 'cancelado' ? h($fechaCancelacion) : $paquete) . '</p>
-                    </div>
+            </td>
 
-                    <div class="rounded-2xl border border-white/10 bg-[#071322] p-4">
-                        <p class="mb-1 text-xs uppercase tracking-wide text-white/40">Ubicación</p>';
+            <!-- DIRECCIÓN -->
+            <td class="px-4 py-4">
+
+                <div class="max-w-[270px] text-slate-300">
+
+                    <i class="bi bi-geo-alt mr-1 text-cyan-300"></i>
+
+                    ' . $dir . '
+
+                </div>
+
+            </td>
+
+            <!-- FECHA -->
+            <td class="whitespace-nowrap px-4 py-4 text-slate-300">
+                ' . ($fecha ?: '—') . '
+            </td>
+
+            <!-- PAQUETE -->
+            <td class="px-4 py-4 font-medium text-white">
+                ' . $paquete . '
+            </td>
+
+            <!-- UBICACIÓN -->
+            <td class="px-4 py-4">
+        ';
 
         if ($tieneUbicacion) {
+
             echo '
-                        <p class="mb-0 text-sm font-semibold text-emerald-400">
-                            <i class="bi bi-check-circle-fill"></i>
-                            Guardada
-                        </p>';
+                <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Guardada
+                </span>
+            ';
+
         } else {
+
             echo '
-                        <p class="mb-0 text-sm font-semibold text-slate-500">
-                            <i class="bi bi-dash-circle"></i>
-                            Sin ubicación
-                        </p>';
+                <span class="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
+                    <i class="bi bi-dash-circle"></i>
+                    Sin ubicación
+                </span>
+            ';
         }
 
         echo '
+            </td>
+
+            <!-- ESTADO -->
+            <td class="px-4 py-4">
+                ' . statusBadge($status) . '
+            </td>
+
+            <!-- BOTÓN DESPLEGABLE -->
+            <td class="px-4 py-4 text-center">
+
+                <button
+                    type="button"
+                    data-toggle-acciones="' . $idc . '"
+                    aria-expanded="false"
+                    aria-controls="acciones-' . $idc . '"
+
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10 text-cyan-300 transition hover:bg-cyan-400/20"
+
+                    title="Mostrar acciones"
+                    aria-label="Mostrar acciones del contrato ' . $idc . '"
+                >
+
+                    <i class="bi bi-chevron-down icono-acciones text-lg"></i>
+
+                </button>
+
+            </td>
+
+        </tr>
+        ';
+
+        /* ============================================
+           FILA DE ACCIONES OCULTA
+        ============================================ */
+
+        echo '
+        <tr
+            id="acciones-' . $idc . '"
+            class="hidden bg-[#10283f]"
+        >
+
+            <td colspan="8" class="px-5 py-5">
+
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+
+                    <div>
+
+                        <h4 class="mb-1 text-sm font-bold text-cyan-300">
+                            <i class="bi bi-lightning-charge-fill mr-1"></i>
+                            Acciones del contrato #' . $idc . '
+                        </h4>
+
+                        <p class="mb-0 text-xs text-slate-400">
+                            Selecciona la operación que deseas realizar.
+                        </p>
+
                     </div>
+        ';
+
+        if ($status === 'cancelado') {
+
+            echo '
+                <div class="text-xs text-red-300">
+                    <i class="bi bi-calendar-x mr-1"></i>
+                    Cancelado: ' . h($fechaCancelacion) . '
+                </div>
+            ';
+        }
+
+        echo '
                 </div>
 
-                <div class="mt-1 border-t border-white/10 pt-4">
-                    <div class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        <i class="bi bi-lightning-charge-fill text-cyan-300"></i>
-                        Acciones del contrato
-                    </div>
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+        ';
 
-                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">';
+        /* ============================================
+           EDITAR
+        ============================================ */
 
         echo botonAccion(
             'bi-pencil-square',
@@ -269,12 +414,20 @@ if ($result && $result->num_rows > 0) {
             'editContract(' . $idc . ')'
         );
 
+        /* ============================================
+           DESCARGAR
+        ============================================ */
+
         echo botonAccion(
             'bi-download',
             'Descargar',
             'bg-emerald-500/90 shadow-emerald-500/20 hover:bg-emerald-400',
             'descargarContrato(' . $idc . ')'
         );
+
+        /* ============================================
+           CREAR
+        ============================================ */
 
         echo botonAccion(
             'bi-person-plus',
@@ -283,6 +436,10 @@ if ($result && $result->num_rows > 0) {
             'addContract(' . $idc . ')'
         );
 
+        /* ============================================
+           REENVIAR CONTRATO POR CORREO
+        ============================================ */
+
         echo botonAccion(
             'bi-envelope-arrow-up',
             'Reenviar',
@@ -290,35 +447,56 @@ if ($result && $result->num_rows > 0) {
             'abrirModalReenviarContrato(' . $idc . ')'
         );
 
+        /* ============================================
+           UBICACIÓN
+        ============================================ */
+
         if ($tieneUbicacion) {
+
             echo '
-                <button
-                    type="button"
-                    class="btn-ver-ubicacion-contrato min-h-[46px] w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-500/90 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-300/50"
-                    data-id="' . $idc . '"
-                    data-nombre="' . $nombreData . '"
-                    data-lat="' . h($lat) . '"
-                    data-lng="' . h($lng) . '"
-                    data-precision="' . h($precision) . '"
-                    data-fuente="' . h($fuente) . '"
-                    data-fecha="' . h($fechaUbicacion) . '"
-                    title="Ver ubicación">
-                    <i class="bi bi-geo-alt-fill text-lg"></i>
-                    <span>Ubicación</span>
-                </button>';
+            <button
+                type="button"
+
+                class="btn-ver-ubicacion-contrato min-h-[46px] w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-sky-500/90 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-400"
+
+                data-id="' . $idc . '"
+                data-nombre="' . $nombreData . '"
+                data-lat="' . h($lat) . '"
+                data-lng="' . h($lng) . '"
+                data-precision="' . h($precision) . '"
+                data-fuente="' . h($fuente) . '"
+                data-fecha="' . h($fechaUbicacion) . '"
+
+                title="Ver ubicación"
+            >
+                <i class="bi bi-geo-alt-fill text-lg"></i>
+                Ubicación
+            </button>
+            ';
+
         } else {
+
             echo '
-                <button
-                    type="button"
-                    disabled
-                    class="min-h-[46px] w-full inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-slate-700/60 px-4 py-3 text-sm font-bold text-slate-400"
-                    title="Este contrato no tiene ubicación guardada">
-                    <i class="bi bi-geo-alt text-lg"></i>
-                    <span>Sin ubicación</span>
-                </button>';
+            <button
+                type="button"
+                disabled
+
+                class="min-h-[46px] w-full inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-slate-700/60 px-4 py-3 text-sm font-bold text-slate-400"
+
+                title="Este contrato no tiene ubicación guardada"
+            >
+                <i class="bi bi-geo-alt text-lg"></i>
+                Sin ubicación
+            </button>
+            ';
         }
 
+        /* ============================================
+           BOTONES SEGÚN ESTADO
+        ============================================ */
+
         if ($status === 'cancelado') {
+
             echo botonAccion(
                 'bi-file-earmark-arrow-down',
                 'Comprobante',
@@ -332,7 +510,9 @@ if ($result && $result->num_rows > 0) {
                 'bg-emerald-500/90 shadow-emerald-500/20 hover:bg-emerald-400',
                 'confirmarReactivacion(' . $idc . ')'
             );
+
         } elseif ($status === 'activo') {
+
             echo botonAccion(
                 'bi-x-circle',
                 'Cancelar',
@@ -341,18 +521,36 @@ if ($result && $result->num_rows > 0) {
             );
         }
 
+        /* ============================================
+           CERRAR FILA DESPLEGABLE
+        ============================================ */
+
         echo '
-                    </div>
                 </div>
-            </div>
-        </article>';
+
+            </td>
+
+        </tr>
+        ';
     }
 
-    echo '</div>';
+    /* ============================================
+       CIERRE DE TABLA
+    ============================================ */
+
+    echo '
+            </tbody>
+        </table>
+    </div>
+    ';
+
 } else {
+
     echo '
     <div class="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
+
         <div>
+
             <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
                 <i class="bi bi-inbox text-xl"></i>
             </div>
@@ -364,8 +562,11 @@ if ($result && $result->num_rows > 0) {
             <p class="mt-2 text-sm text-white/55">
                 No se encontraron contratos con los filtros seleccionados.
             </p>
+
         </div>
-    </div>';
+
+    </div>
+    ';
 }
 
 $conexion->close();

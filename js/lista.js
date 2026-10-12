@@ -1223,8 +1223,9 @@ function validateAndAddUsuario(id) {
     return;
   }
 
-  const ipPattern =
-    /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  
+const ipPattern = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+
 
   if (!ipPattern.test(ip)) {
     Swal.fire({
@@ -1842,6 +1843,70 @@ busquedaEl?.addEventListener("keydown", (e) => {
 });
 
 filtroEstadoEl?.addEventListener("change", cargarTabla);
+
+/* =====================================================
+   MOSTRAR / OCULTAR ACCIONES DE CONTRATOS
+===================================================== */
+
+document.addEventListener("click", (event) => {
+
+    const boton = event.target.closest(
+        "[data-toggle-acciones]"
+    );
+
+    if (!boton) return;
+
+    const id = boton.dataset.toggleAcciones;
+
+    const panel = document.getElementById(
+        `acciones-${id}`
+    );
+
+    if (!panel) return;
+
+    const abrir = panel.classList.contains("hidden");
+
+    /* Cerrar los otros contratos */
+
+    document.querySelectorAll(
+        "[data-toggle-acciones]"
+    ).forEach((btn) => {
+
+        btn.setAttribute("aria-expanded", "false");
+
+        const icono = btn.querySelector(".icono-acciones");
+
+        if (icono) {
+            icono.classList.remove("bi-chevron-up");
+            icono.classList.add("bi-chevron-down");
+        }
+    });
+
+    document.querySelectorAll(
+        '[id^="acciones-"]'
+    ).forEach((item) => {
+
+        item.classList.add("hidden");
+
+    });
+
+    /* Abrir el contrato seleccionado */
+
+    if (abrir) {
+
+        panel.classList.remove("hidden");
+
+        boton.setAttribute("aria-expanded", "true");
+
+        const icono = boton.querySelector(".icono-acciones");
+
+        if (icono) {
+            icono.classList.remove("bi-chevron-down");
+            icono.classList.add("bi-chevron-up");
+        }
+    }
+
+});
 
 /* Carga inicial */
 document.addEventListener("DOMContentLoaded", () => {

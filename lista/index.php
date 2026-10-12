@@ -121,7 +121,7 @@ if (!isset($_SESSION['username'])) {
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-white/10 bg-[#071322]">
-          <div id="tabla" class="min-h-[320px] p-4 md:p-5">
+          <div id="tabla" class="min-h-[320px] overflow-x-auto">
             <div class="flex min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-6 text-center">
               <div>
                 <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
